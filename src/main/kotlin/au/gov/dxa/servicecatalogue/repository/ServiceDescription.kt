@@ -12,15 +12,23 @@ class ServiceDescription {
     @Id
     var id: String? = null
     var revisions: MutableList<ServiceDescriptionRevision> = mutableListOf()
+    var tags: MutableList<String> = mutableListOf()
+    var logo: String = ""
 
     constructor (){}
 
-    constructor (name:String, description: String, pages : List<String>){
+/*    constructor (name:String, description: String, pages : List<String>){
         var firstContent = ServiceDescriptionContent(name, description, pages)
         var firstRevision = ServiceDescriptionRevision(LocalDateTime.now().toString(), firstContent)
-
         this.revisions = mutableListOf(firstRevision)
-
+    }
+ */
+    constructor (name:String, description: String, pages : List<String>, tags : List<String>, logo: String){
+        var firstContent = ServiceDescriptionContent(name, description, pages)
+        var firstRevision = ServiceDescriptionRevision(LocalDateTime.now().toString(), firstContent)
+        this.revisions = mutableListOf(firstRevision)
+        this.tags = tags.toMutableList()
+        this.logo = logo
     }
 
     override fun toString(): String {

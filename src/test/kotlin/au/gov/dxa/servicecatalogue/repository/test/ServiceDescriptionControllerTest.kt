@@ -22,7 +22,7 @@ class ServiceDescriptionControllerTest {
         val name = "ServiceName"
         val description = "ServiceDescription"
         val pages = listOf("Page 1","Page 2")
-        val svc = ServiceDescription(name, description, pages)
+        val svc = ServiceDescription(name, description, pages, listOf(), "")
 
         val now = LocalDateTime.now().toString().split("T")[0]
 
@@ -44,7 +44,7 @@ class ServiceDescriptionControllerTest {
         val description = "ServiceDescription"
         val pages = listOf("Page 1","Page 2")
 
-        val svc = ServiceDescription(name, description, pages)
+        val svc = ServiceDescription(name, description, pages, listOf(), "")
 
         Assert.assertEquals(1, svc.revisions.size)
         Assert.assertNotNull(svc.currentRevision())

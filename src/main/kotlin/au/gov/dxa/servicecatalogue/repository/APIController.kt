@@ -45,7 +45,7 @@ class APIController {
     @CrossOrigin
     @GetMapping("/new")
     fun newService(@RequestParam authorization:String):ServiceDescription{
-        val service = ServiceDescription("NewServiceName", "NewServiceDescription", listOf("# Page1"))
+        val service = ServiceDescription("NewServiceName", "NewServiceDescription", listOf("# Page1"), listOf(), "")
 
         if(isAuthorisedToSaveService(authorization, service)) {
             repository.save(service)
@@ -58,13 +58,13 @@ class APIController {
 
 
     data class IndexDTO(val content:List<IndexServiceDTO>)
-    data class IndexServiceDTO(val id:String, val name:String, val description:String)
+    data class IndexServiceDTO(val id:String, val name:String, val description:String, val tags:List<String>, val logoURI:String)
     @CrossOrigin
     @GetMapping("/index")
     fun index(): IndexDTO {
         val output = mutableListOf<IndexServiceDTO>()
         for(service in repository.findAll()){
-            output.add(IndexServiceDTO(service.id!!, service.currentContent().name, service.currentContent().description))
+            output.add(IndexServiceDTO(service.id!!, service.currentContent().name, service.currentContent().description, service.tags, service.logo))
         }
         return IndexDTO(output)
     }
@@ -105,7 +105,7 @@ class APIController {
         val raw = request.getHeader("authorization")
         val authorization = String(Base64.getDecoder().decode(raw.removePrefix("Basic ")))
 
-        val service = ServiceDescription(revision.name, revision.description, revision.pages)
+        val service = ServiceDescription(revision.name, revision.description, revision.pages, listOf(), "")
 
         if(isAuthorisedToSaveService(authorization, service)) {
             repository.save(service)
