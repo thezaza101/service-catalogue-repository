@@ -75,15 +75,56 @@ class ServiceDescriptionRepositoryTest {
 
 
         val svc2 = repository.findById(svc.id!!)
-
         Assert.assertEquals(2, svc2.revisions.size)
         Assert.assertNotNull(svc2.currentRevision())
         Assert.assertNotNull(svc2.currentContent())
         Assert.assertEquals(nameD, svc2.currentContent().name)
         Assert.assertEquals(descriptionD, svc2.currentContent().description)
         Assert.assertEquals(pagesD, svc2.currentContent().pages)
+    }
 
+    @Test
+    @UsingDataSet(loadStrategy = LoadStrategyEnum.DELETE_ALL)
+    fun repository_will_only_keep_latest_x_revisions(){
 
+        val name = "ServiceName"
+        val description = "ServiceDescription"
+        val pages = listOf("Page 1","Page 2")
+
+        val svc = ServiceDescription(name, description, pages, listOf(), "")
+        Assert.assertEquals(1, svc.revisions.size)
+        Assert.assertNotNull(svc.currentRevision())
+        Assert.assertNotNull(svc.currentContent())
+        Assert.assertEquals(name, svc.currentContent().name)
+        Assert.assertEquals(description, svc.currentContent().description)
+        Assert.assertEquals(pages, svc.currentContent().pages)
+
+        for(i in (2..50)){
+
+            val nameD = "ServiceName${i}"
+            val descriptionD = "ServiceDescription${i}"
+            val pagesD = listOf("Page 1","Page 2", "Page ${i}")
+            svc.revise(nameD, descriptionD, pagesD)
+            repository.save(svc)
+            val svc2 = repository.findById(svc.id!!)
+
+            if( i <= ServiceDescription.REVISION_LIMIT) Assert.assertEquals(i, svc2.revisions.size)
+            if( i > ServiceDescription.REVISION_LIMIT) Assert.assertEquals(ServiceDescription.REVISION_LIMIT, svc2.revisions.size)
+
+            Assert.assertNotNull(svc2.currentRevision())
+            Assert.assertNotNull(svc2.currentContent())
+            Assert.assertEquals(nameD, svc2.currentContent().name)
+            Assert.assertEquals(descriptionD, svc2.currentContent().description)
+            Assert.assertEquals(pagesD, svc2.currentContent().pages)
+        }
+
+        val svc2 = repository.findById(svc.id!!)
+        Assert.assertEquals(ServiceDescription.REVISION_LIMIT, svc2.revisions.size)
+        Assert.assertNotNull(svc2.currentRevision())
+        Assert.assertNotNull(svc2.currentContent())
+        Assert.assertEquals("ServiceName50", svc2.currentContent().name)
+        Assert.assertEquals("ServiceDescription50", svc2.currentContent().description)
+        Assert.assertEquals(listOf("Page 1", "Page 2", "Page 50"), svc2.currentContent().pages)
     }
 
 }

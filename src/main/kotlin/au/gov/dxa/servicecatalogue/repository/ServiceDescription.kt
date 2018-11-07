@@ -8,6 +8,7 @@ data class ServiceDescriptionRevision(val time:String, val content: ServiceDescr
 
 
 class ServiceDescription {
+    
 
     @Id
     var id: String? = null
@@ -45,5 +46,12 @@ class ServiceDescription {
         var nextRevision = ServiceDescriptionRevision(LocalDateTime.now().toString(), nextContent)
 
         revisions.add(nextRevision)
+        revisions = revisions.takeLast(REVISION_LIMIT).toMutableList()
     }
+
+    companion object{
+        @JvmStatic
+        val REVISION_LIMIT = 10
+    }
+
 }
