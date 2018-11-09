@@ -4,7 +4,7 @@ import org.springframework.data.annotation.Id
 import java.time.LocalDateTime
 
 data class ServiceDescriptionContent(val name:String = "", val description:String = "", val pages:List<String> = listOf(""))
-data class ServiceDescriptionRevision(val time:String, val content: ServiceDescriptionContent)
+data class ServiceDescriptionRevision(val time:String = "", val content: ServiceDescriptionContent = ServiceDescriptionContent())
 
 
 class ServiceDescription {

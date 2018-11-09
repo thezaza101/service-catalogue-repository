@@ -1,9 +1,6 @@
 
 package au.gov.dxa.servicecatalogue.repository
 
-import com.mongodb.MongoClient
-import org.bson.Document
-import org.bson.conversions.Bson
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.env.Environment
 import org.springframework.http.HttpStatus
@@ -71,7 +68,7 @@ class APIController {
 
 
     @CrossOrigin
-    data class BackupDTO(val content:List<ServiceDescription>)
+    data class BackupDTO(val content:Iterable<ServiceDescription>)
     @GetMapping("/backup")
     fun backup(): BackupDTO {
         return BackupDTO(repository.findAll())

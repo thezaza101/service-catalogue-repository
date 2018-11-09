@@ -1,7 +1,12 @@
 package au.gov.dxa.servicecatalogue.repository
 
-import org.springframework.data.mongodb.repository.MongoRepository
+import kotlin.collections.Iterable
 
-interface ServiceDescriptionRepository : MongoRepository<ServiceDescription, String> {
+class RepositoryException() : RuntimeException()
+
+interface ServiceDescriptionRepository {
     fun findById(id: String): ServiceDescription
+    fun count(): Int
+    fun save(service: ServiceDescription)
+    fun findAll(): Iterable<ServiceDescription>
 }

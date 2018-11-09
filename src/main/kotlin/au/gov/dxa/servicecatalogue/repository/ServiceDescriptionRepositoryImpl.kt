@@ -1,0 +1,104 @@
+
+package au.gov.dxa.servicecatalogue.repository
+
+import kotlin.collections.Iterable
+import org.springframework.stereotype.Service
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
+import javax.sql.DataSource
+import java.sql.Connection
+import java.util.UUID
+import com.fasterxml.jackson.databind.ObjectMapper
+
+@Service
+class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
+    @Value("\${spring.datasource.url}")
+    private var dbUrl: String? = null
+
+    @Autowired
+    private lateinit var dataSource: DataSource
+
+    override fun findById(id: String): ServiceDescription {
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+
+            val q = connection.prepareStatement("SELECT data FROM service_descriptions WHERE id = ?")
+            q.setString(1, id)
+            var rs = q.executeQuery()
+            if (!rs.next()) {
+                throw RepositoryException()
+            }
+            
+            return ObjectMapper().readValue(rs.getString("data"), ServiceDescription::class.java)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+    }
+
+    override fun count(): Int {
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+            val stmt = connection.createStatement()
+            var rs = stmt.executeQuery("SELECT COUNT(*) c FROM service_descriptions")
+            if (!rs.next()) {
+                throw RepositoryException()
+            }
+            return rs.getInt("c")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+    }
+
+    override fun save(service: ServiceDescription) {
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+            val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS service_descriptions (id VARCHAR(50), data JSONB, PRIMARY KEY (id))")
+
+            val upsert = connection.prepareStatement("INSERT INTO service_descriptions(id, data) VALUES(?, ?::jsonb) ON CONFLICT(id) DO UPDATE SET data = EXCLUDED.data")
+            if (service.id == null) {
+                service.id = UUID.randomUUID().toString()
+            }
+            upsert.setString(1, service.id)
+            upsert.setString(2, ObjectMapper().writeValueAsString(service))
+            upsert.executeUpdate()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+    }
+
+    override fun findAll(): Iterable<ServiceDescription> {
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+
+            val stmt = connection.createStatement()
+            val rs = stmt.executeQuery("SELECT data FROM service_descriptions")
+            val rv: MutableList<ServiceDescription> = mutableListOf()
+            val om = ObjectMapper()
+            while (rs.next()) {
+                rv.add(om.readValue(rs.getString("data"), ServiceDescription::class.java))
+            }
+            return rv
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+    }
+}
+
+
