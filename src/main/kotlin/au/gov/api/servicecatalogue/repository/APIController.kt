@@ -1,5 +1,5 @@
 
-package au.gov.dxa.servicecatalogue.repository
+package au.gov.api.servicecatalogue.repository
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.env.Environment
