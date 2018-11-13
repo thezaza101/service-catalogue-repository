@@ -1,12 +1,16 @@
 
-package au.gov.dxa.servicecatalogue.repository
+package au.gov.api.servicecatalogue.repository
 
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import kotlin.collections.Iterable
 import org.springframework.stereotype.Service
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Bean
 import javax.sql.DataSource
 import java.sql.Connection
+import java.sql.SQLException
 import java.util.UUID
 import com.fasterxml.jackson.databind.ObjectMapper
 
@@ -17,6 +21,10 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
 
     @Autowired
     private lateinit var dataSource: DataSource
+
+	constructor(theDataSource:DataSource){
+		dataSource = theDataSource
+	}
 
     override fun findById(id: String): ServiceDescription {
         var connection: Connection? = null
@@ -99,6 +107,25 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
             if (connection != null) connection.close()
         }
     }
+
+	@Bean
+	@Throws(SQLException::class)
+	fun dataSource(): DataSource? {
+		if (dbUrl?.isEmpty() ?: true) {
+			return HikariDataSource()
+		} else {
+			val config = HikariConfig()
+			config.jdbcUrl = dbUrl
+			try {
+				return HikariDataSource(config)
+			} catch (e: Exception) {
+				return null
+			}
+		}
+	}
+
+
+
 }
 
 

@@ -1,4 +1,4 @@
-package au.gov.dxa.servicecatalogue.repository
+package au.gov.api.servicecatalogue.repository
 
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication

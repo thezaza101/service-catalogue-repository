@@ -1,4 +1,4 @@
-package au.gov.dxa.servicecatalogue.repository
+package au.gov.api.servicecatalogue.repository
 
 import javax.servlet.http.HttpServletRequest
 
