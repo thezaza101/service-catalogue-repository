@@ -17,7 +17,7 @@ class ServiceDescription {
     var revisions: MutableList<ServiceDescriptionRevision> = mutableListOf()
     var tags: MutableList<String> = mutableListOf()
     var logo: String = ""
-    val metadata = Metadata()
+    var metadata = Metadata()
 
     constructor (){}
 
