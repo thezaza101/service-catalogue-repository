@@ -9,6 +9,8 @@ import java.util.*
 
 import javax.servlet.http.HttpServletRequest
 
+import khttp.get
+import khttp.structures.authorization.BasicAuthorization
 
 
 @RestController
@@ -29,6 +31,30 @@ class APIController {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     class UnauthorisedToAccessMonitoring() : RuntimeException()
 
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    class UnauthorisedToModifyServices() : RuntimeException()
+    private fun isAuthorisedToSaveService(request:HttpServletRequest, space:String):Boolean{
+        if(environment.getActiveProfiles().contains("prod")){
+            val AuthURI = System.getenv("AuthURI")?: throw RuntimeException("No environment variable: AuthURI")
+
+            // http://www.baeldung.com/get-user-in-spring-security
+            val raw = request.getHeader("authorization")
+            val apikey = String(Base64.getDecoder().decode(raw.removePrefix("Basic ")))
+        
+            val user = apikey.split(":")[0]
+            val pass= apikey.split(":")[1]
+
+
+            val authorisationRequest = get(AuthURI + "/api/canWrite",
+                                            params=mapOf("space" to space),
+                                            auth=BasicAuthorization(user, pass)
+                                       )
+            if(authorisationRequest.statusCode != 200) return false
+            return authorisationRequest.text == "true"
+        }
+        return true
+    }
+
     @CrossOrigin
     @GetMapping("/monitor")
     fun test_db_stats(@RequestParam authKey:String):Map<String, Any>?{
@@ -41,10 +67,11 @@ class APIController {
 
     @CrossOrigin
     @GetMapping("/new")
-    fun newService(@RequestParam authorization:String):ServiceDescription{
+    fun newService(request:HttpServletRequest, @RequestParam space:String):ServiceDescription{
         val service = ServiceDescription("NewServiceName", "NewServiceDescription", listOf("# Page1"), listOf(), "")
 
-        if(isAuthorisedToSaveService(authorization, service)) {
+        if(isAuthorisedToSaveService(request, space)) {
+            service.metadata.space=space
             repository.save(service)
             return service
         }
@@ -55,13 +82,13 @@ class APIController {
 
 
     data class IndexDTO(val content:List<IndexServiceDTO>)
-    data class IndexServiceDTO(val id:String, val name:String, val description:String, val tags:List<String>, val logoURI:String)
+    data class IndexServiceDTO(val id:String, val name:String, val description:String, val tags:List<String>, val logoURI:String, val metadata:Metadata)
     @CrossOrigin
     @GetMapping("/index")
     fun index(): IndexDTO {
         val output = mutableListOf<IndexServiceDTO>()
         for(service in repository.findAll()){
-            output.add(IndexServiceDTO(service.id!!, service.currentContent().name, service.currentContent().description, service.tags, service.logo))
+            output.add(IndexServiceDTO(service.id!!, service.currentContent().name, service.currentContent().description, service.tags, service.logo, service.metadata))
         }
         return IndexDTO(output)
     }
@@ -82,29 +109,15 @@ class APIController {
 
 
 
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    class UnauthorisedToModifyServices() : RuntimeException()
-
-    private fun isAuthorisedToSaveService(authorisation:String, service: ServiceDescription):Boolean{
-        if(environment.getActiveProfiles().contains("prod")){
-            val authKey = environment.getProperty("auth.key")
-            return authorisation == authKey
-        }
-        return true
-    }
 
     @CrossOrigin
     @ResponseStatus(HttpStatus.CREATED)  // 201
     @PostMapping("/service")
     fun setService(@RequestBody revision: ServiceDescriptionContent, request:HttpServletRequest): ServiceDescription {
 
-        // http://www.baeldung.com/get-user-in-spring-security
-        val raw = request.getHeader("authorization")
-        val authorization = String(Base64.getDecoder().decode(raw.removePrefix("Basic ")))
-
         val service = ServiceDescription(revision.name, revision.description, revision.pages, listOf(), "")
-
-        if(isAuthorisedToSaveService(authorization, service)) {
+        
+        if(isAuthorisedToSaveService(request, service.metadata.space)) {
             repository.save(service)
             return service
         }
@@ -112,27 +125,5 @@ class APIController {
         throw UnauthorisedToModifyServices()
     }
 
-
-    @CrossOrigin
-    @ResponseStatus(HttpStatus.OK)  // 200
-    @PostMapping("/service/{id}")
-    fun reviseService(@PathVariable id:String, @RequestBody revision: ServiceDescriptionContent, request:HttpServletRequest): ServiceDescriptionContent {
-
-        // http://www.baeldung.com/get-user-in-spring-security
-        val raw = request.getHeader("authorization")
-        val authorization = String(Base64.getDecoder().decode(raw.removePrefix("Basic ")))
-
-        val service = repository.findById(id)
-
-        if(isAuthorisedToSaveService(authorization, service)) {
-
-            service.revise(revision.name, revision.description, revision.pages)
-
-            repository.save(service)
-            return service.currentContent()
-        }
-
-        throw UnauthorisedToModifyServices()
-    }
 
 }
