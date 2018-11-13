@@ -7,6 +7,8 @@ data class ServiceDescriptionContent(val name:String = "", val description:Strin
 data class ServiceDescriptionRevision(val time:String = "", val content: ServiceDescriptionContent = ServiceDescriptionContent())
 
 
+data class Metadata(var agency:String = "", var space:String = "")
+
 class ServiceDescription {
     
 
@@ -15,6 +17,7 @@ class ServiceDescription {
     var revisions: MutableList<ServiceDescriptionRevision> = mutableListOf()
     var tags: MutableList<String> = mutableListOf()
     var logo: String = ""
+    val metadata = Metadata()
 
     constructor (){}
 

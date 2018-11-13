@@ -17,7 +17,7 @@ class MetaDataTest{
     var repository = ServiceDescriptionRepositoryImpl(MockDataSource())
 
 @Test
-    fun by_default_services_have_empty_metadata(){
+    fun by_default_services_have_empty_tags(){
 
         val name = "ServiceName"
         val description = "ServiceDescription"
@@ -43,7 +43,7 @@ class MetaDataTest{
 
 
     @Test
-    fun services_will_save_metadata(){
+    fun services_will_save_tags(){
 
         val name = "ServiceName"
         val description = "ServiceDescription"
@@ -67,6 +67,44 @@ class MetaDataTest{
         Assert.assertEquals(tags, svc.tags)
         Assert.assertEquals(logo, svc.logo)
 
+    }
+
+
+
+
+
+    fun testServicesStartWithNoMetadata(){
+        val name = "ServiceName"
+        val description = "ServiceDescription"
+        val pages = listOf("Page 1","Page 2")
+        val svc = ServiceDescription(name, description, pages, listOf(), "")
+        repository.save(svc)
+
+
+        val svc2 = repository.findById(svc.id!!)
+        val meta = svc2.metadata
+
+        Assert.assertEquals("", meta.agency)
+        Assert.assertEquals("", meta.space)
+    }
+
+
+
+    fun testServicesCanSetMetadata(){
+        val name = "ServiceName"
+        val description = "ServiceDescription"
+        val pages = listOf("Page 1","Page 2")
+        val svc = ServiceDescription(name, description, pages, listOf(), "")
+        svc.metadata.agency = "ato.gov.au"
+        svc.metadata.space = "eInvoicing"
+        repository.save(svc)
+
+
+        val svc2 = repository.findById(svc.id!!)
+        val meta = svc2.metadata
+
+        Assert.assertEquals("ato.gov.au", meta.agency)
+        Assert.assertEquals("eInvoicing", meta.space)
     }
 
 }
