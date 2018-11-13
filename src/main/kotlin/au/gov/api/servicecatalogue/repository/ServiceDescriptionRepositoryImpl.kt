@@ -22,7 +22,9 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
     @Autowired
     private lateinit var dataSource: DataSource
 
-	constructor(theDataSource:DataSource){
+    constructor(){}
+
+    constructor(theDataSource:DataSource){
 		dataSource = theDataSource
 	}
 
