@@ -22,6 +22,10 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
     @Autowired
     private lateinit var dataSource: DataSource
 
+	constructor(theDataSource:DataSource){
+		dataSource = theDataSource
+	}
+
     override fun findById(id: String): ServiceDescription {
         var connection: Connection? = null
         try {

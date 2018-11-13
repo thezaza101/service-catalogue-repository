@@ -53,6 +53,9 @@ dependencies {
     compile 'org.postgresql:postgresql:9.4.1212'
     compile 'com.zaxxer:HikariCP:2.6.0'
     compile 'com.fasterxml.jackson.core:jackson-databind'
+
+    testCompile 'com.opentable.components:otj-pg-embedded:0.12.5'
+
 }
 
 group 'dir'
