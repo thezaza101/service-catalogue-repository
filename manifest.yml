@@ -1,0 +1,12 @@
+---
+applications:
+- name: api-gov-au-pg-repository
+  memory: 1G
+  buildpack: java_buildpack
+  env:
+    SPRING_PROFILES_ACTIVE: prod
+  path: build/libs/service-catalogue-repository-1.0.jar
+  services:
+  - pg-service-repo 
+  routes:
+  - route: api-gov-au.apps.y.cld.gov.au/repository
