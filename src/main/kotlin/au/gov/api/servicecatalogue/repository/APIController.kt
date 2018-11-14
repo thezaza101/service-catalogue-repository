@@ -55,15 +55,6 @@ class APIController {
         return true
     }
 
-    @CrossOrigin
-    @GetMapping("/monitor")
-    fun test_db_stats(@RequestParam authKey:String):Map<String, Any>?{
-        var authKeyEnv: String = System.getenv("authKey") ?: ""
-        if(authKey != authKeyEnv) throw UnauthorisedToAccessMonitoring()
-
-        return monitor.getStats()
-    }
-
 
     @CrossOrigin
     @GetMapping("/new")
@@ -111,7 +102,23 @@ class APIController {
 
 
     @CrossOrigin
+    @PostMapping("/metadata/{id}")
+    fun setMetadata(@RequestBody metadata: Metadata, @PathVariable id:String, request:HttpServletRequest): Metadata{
+
+
+        val service = repository.findById(id)
+        
+        if(isAuthorisedToSaveService(request, "admin")) {
+            service.metadata = metadata
+            repository.save(service)
+            return service.metadata
+        }
+
+        throw UnauthorisedToModifyServices()
+    }
+
     @ResponseStatus(HttpStatus.CREATED)  // 201
+    @CrossOrigin
     @PostMapping("/service")
     fun setService(@RequestBody revision: ServiceDescriptionContent, request:HttpServletRequest): ServiceDescription {
 
@@ -124,6 +131,25 @@ class APIController {
 
         throw UnauthorisedToModifyServices()
     }
+
+    @CrossOrigin
+    @ResponseStatus(HttpStatus.OK)  // 200
+    @PostMapping("/service/{id}")
+    fun reviseService(@PathVariable id:String, @RequestBody revision: ServiceDescriptionContent, request:HttpServletRequest): ServiceDescriptionContent {
+        val service = repository.findById(id)
+
+        if(isAuthorisedToSaveService(request, service.metadata.space)) {
+
+            service.revise(revision.name, revision.description, revision.pages)
+
+            repository.save(service)
+            return service.currentContent()
+        }
+
+        throw UnauthorisedToModifyServices()
+    }
+
+
 
 
 }
