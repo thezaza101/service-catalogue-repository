@@ -25,11 +25,6 @@ class APIController {
     @Autowired
     private lateinit var environment: Environment
 
-    @Autowired lateinit var monitor: Monitor
-
-
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    class UnauthorisedToAccessMonitoring() : RuntimeException()
 
     @ResponseStatus(HttpStatus.FORBIDDEN)
     class UnauthorisedToModifyServices() : RuntimeException()
