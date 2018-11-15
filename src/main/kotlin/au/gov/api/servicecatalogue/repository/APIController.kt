@@ -82,6 +82,9 @@ class APIController {
         return IndexDTO(output)
     }
 
+/*
+
+turn this off for now to prevent !visibility data leaking out
 
     @CrossOrigin
     data class BackupDTO(val content:Iterable<ServiceDescription>)
@@ -89,6 +92,8 @@ class APIController {
     fun backup(): BackupDTO {
         return BackupDTO(repository.findAll())
     }
+*/
+
 
     @CrossOrigin
     @GetMapping("/service/{id}")
