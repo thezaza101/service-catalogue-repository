@@ -12,6 +12,8 @@ import javax.servlet.http.HttpServletRequest
 import khttp.get
 import khttp.structures.authorization.BasicAuthorization
 
+import com.beust.klaxon.Klaxon
+
 
 @RestController
 class APIController {
@@ -54,6 +56,40 @@ class APIController {
     }
 
 
+	fun writableSpaces(request:HttpServletRequest):List<String>{
+
+            val AuthURI = System.getenv("AuthURI")?: throw RuntimeException("No environment variable: AuthURI")
+
+            // http://www.baeldung.com/get-user-in-spring-security
+            val raw = request.getHeader("authorization")
+            if (raw==null) return listOf();
+            val apikey = String(Base64.getDecoder().decode(raw.removePrefix("Basic ")))
+        
+            val user = apikey.split(":")[0]
+            val pass= apikey.split(":")[1]
+
+
+            val authorisationRequest = get(AuthURI + "/api/spaces",
+                                            auth=BasicAuthorization(user, pass)
+                                       )
+            if(authorisationRequest.statusCode != 200) return listOf()
+
+			println(authorisationRequest.text)
+			println(authorisationRequest.jsonArray)
+
+			val spaces = mutableListOf<String>()
+			
+			for (i in 0..(authorisationRequest.jsonArray!!.length() - 1)) {
+			    val item = authorisationRequest.jsonArray!![i].toString()
+				spaces.add(item)
+			}
+			
+			return spaces
+
+
+	}
+
+
     @CrossOrigin
     @GetMapping("/new")
     fun newService(request:HttpServletRequest, @RequestParam space:String):ServiceDescription{
@@ -83,12 +119,32 @@ class APIController {
     }
 
 
+
+    @CrossOrigin
+    @GetMapping("/indexWritable")
+    fun indexWritable(request:HttpServletRequest): IndexDTO {
+        val output = mutableListOf<IndexServiceDTO>()
+        val spaces = writableSpaces(request)
+        for(service in repository.findAll()){
+				if(service.metadata.space in spaces || "admin" in spaces) output.add(IndexServiceDTO(service.id!!, service.currentContent().name, service.currentContent().description, service.tags, service.logo, service.metadata))
+        }
+        return IndexDTO(output)
+    }
+
+
+
+/*
+
+turn this off for now to prevent !visibility data leaking out
+
     @CrossOrigin
     data class BackupDTO(val content:Iterable<ServiceDescription>)
     @GetMapping("/backup")
     fun backup(): BackupDTO {
         return BackupDTO(repository.findAll())
     }
+*/
+
 
     @CrossOrigin
     @GetMapping("/service/{id}")
