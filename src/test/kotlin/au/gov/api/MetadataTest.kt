@@ -72,7 +72,7 @@ class MetaDataTest{
 
 
 
-
+    @Test
     fun testServicesStartWithNoMetadata(){
         val name = "ServiceName"
         val description = "ServiceDescription"
@@ -89,7 +89,7 @@ class MetaDataTest{
     }
 
 
-
+    @Test
     fun testServicesCanSetMetadata(){
         val name = "ServiceName"
         val description = "ServiceDescription"
@@ -107,4 +107,29 @@ class MetaDataTest{
         Assert.assertEquals("eInvoicing", meta.space)
     }
 
+    @Test
+    fun testServicesCanBeInvisible(){
+        val name = "ServiceName"
+        val description = "ServiceDescription"
+        val pages = listOf("Page 1","Page 2")
+        val svc = ServiceDescription(name, description, pages, listOf(), "")
+        svc.metadata.agency = "ato.gov.au"
+        svc.metadata.space = "eInvoicing"
+        svc.metadata.visibility = false
+
+        repository.save(svc)
+
+        var svc2 = ServiceDescription("", "", pages, listOf(), "")
+
+        try {
+            svc2 = repository.findById(svc.id!!)
+        } catch (e:RuntimeException)
+        {
+            Assert.assertNotEquals("ato.gov.au", svc2.metadata.agency)
+        }
+
+        svc2 = repository.findById(svc.id!!,true)
+        Assert.assertEquals("ato.gov.au", svc2.metadata.agency)
+
+    }
 }

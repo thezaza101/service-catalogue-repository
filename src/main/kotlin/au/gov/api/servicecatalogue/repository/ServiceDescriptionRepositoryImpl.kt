@@ -28,7 +28,7 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
 		dataSource = theDataSource
 	}
 
-    override fun findById(id: String): ServiceDescription {
+    override fun findById(id: String,returnPrivate:Boolean): ServiceDescription {
         var connection: Connection? = null
         try {
             connection = dataSource.connection
@@ -39,8 +39,13 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
             if (!rs.next()) {
                 throw RepositoryException()
             }
-            
-            return ObjectMapper().readValue(rs.getString("data"), ServiceDescription::class.java)
+            val sd = ObjectMapper().readValue(rs.getString("data"), ServiceDescription::class.java)
+            if (sd.metadata.visibility)
+            {
+                return sd
+            } else {
+                if (returnPrivate) return sd else throw RepositoryException()
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             throw RepositoryException()
@@ -89,7 +94,7 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
         }
     }
 
-    override fun findAll(): Iterable<ServiceDescription> {
+    override fun findAll(returnPrivate:Boolean): Iterable<ServiceDescription> {
         var connection: Connection? = null
         try {
             connection = dataSource.connection
@@ -101,7 +106,12 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
             while (rs.next()) {
                 rv.add(om.readValue(rs.getString("data"), ServiceDescription::class.java))
             }
-            return rv
+            if (returnPrivate)
+            {
+                return rv
+            } else {
+                return rv.filter { s -> s.metadata.visibility == true}
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             throw RepositoryException()

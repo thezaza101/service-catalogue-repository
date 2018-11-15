@@ -28,12 +28,15 @@ class APIController {
 
     @ResponseStatus(HttpStatus.FORBIDDEN)
     class UnauthorisedToModifyServices() : RuntimeException()
+    class UnauthorisedToViewServices() : RuntimeException()
+
     private fun isAuthorisedToSaveService(request:HttpServletRequest, space:String):Boolean{
         if(environment.getActiveProfiles().contains("prod")){
             val AuthURI = System.getenv("AuthURI")?: throw RuntimeException("No environment variable: AuthURI")
 
             // http://www.baeldung.com/get-user-in-spring-security
             val raw = request.getHeader("authorization")
+            if (raw==null) return false;
             val apikey = String(Base64.getDecoder().decode(raw.removePrefix("Basic ")))
         
             val user = apikey.split(":")[0]
@@ -63,7 +66,6 @@ class APIController {
         }
 
         throw UnauthorisedToModifyServices()
-
     }
 
 
@@ -71,10 +73,11 @@ class APIController {
     data class IndexServiceDTO(val id:String, val name:String, val description:String, val tags:List<String>, val logoURI:String, val metadata:Metadata)
     @CrossOrigin
     @GetMapping("/index")
-    fun index(): IndexDTO {
+    fun index(request:HttpServletRequest): IndexDTO {
         val output = mutableListOf<IndexServiceDTO>()
-        for(service in repository.findAll()){
-            output.add(IndexServiceDTO(service.id!!, service.currentContent().name, service.currentContent().description, service.tags, service.logo, service.metadata))
+        val auth = isAuthorisedToSaveService(request,"admin")
+        for(service in repository.findAll(auth)){
+                output.add(IndexServiceDTO(service.id!!, service.currentContent().name, service.currentContent().description, service.tags, service.logo, service.metadata))
         }
         return IndexDTO(output)
     }
@@ -89,8 +92,14 @@ class APIController {
 
     @CrossOrigin
     @GetMapping("/service/{id}")
-    fun getService(@PathVariable id: String): ServiceDescriptionContent {
-        return repository.findById(id).currentContent()
+    fun getService(request:HttpServletRequest, @PathVariable id: String): ServiceDescriptionContent {
+        val auth = isAuthorisedToSaveService(request,"admin")
+        try{
+            val service = repository.findById(id,auth)
+            return service.currentContent()
+        } catch (e:Exception){
+            throw UnauthorisedToViewServices()
+        }
     }
 
 
@@ -100,10 +109,10 @@ class APIController {
     @PostMapping("/metadata/{id}")
     fun setMetadata(@RequestBody metadata: Metadata, @PathVariable id:String, request:HttpServletRequest): Metadata{
 
-
-        val service = repository.findById(id)
+        val auth = isAuthorisedToSaveService(request, "admin")
+        val service = repository.findById(id,auth)
         
-        if(isAuthorisedToSaveService(request, "admin")) {
+        if(auth) {
             service.metadata = metadata
             repository.save(service)
             return service.metadata
