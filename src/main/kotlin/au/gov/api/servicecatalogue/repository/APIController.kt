@@ -97,6 +97,7 @@ class APIController {
 
         if(isAuthorisedToSaveService(request, space)) {
             service.metadata.space=space
+            service.metadata.visibility = false
             repository.save(service)
             return service
         }
