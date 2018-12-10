@@ -1,0 +1,315 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "The Service Catalogue Repository REST API allows you to browse the API documentation listed on api.gov.au",
+    "version": "1.0.0",
+    "title": "Service Catalogue Repository",
+    "contact": {
+      "email": "alastair.parker@ato.gov.au"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "host": "api.gov.au",
+  "basePath": "/repository/",
+  "schemes": [
+    "https"
+  ],
+  "securityDefinitions": {
+    "basicAuth": {
+      "type": "basic"
+    }
+  },
+  "security": [
+    {
+      "basicAuth": []
+    }
+  ],
+  "paths": {
+    "/index": {
+      "get": {
+        "tags": [
+          "Index"
+        ],
+        "operationId": "browseDefinitions",
+        "summary": "Browse through all the service descriptions",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/IndexDTO"
+            }
+          }
+        }
+      }
+    },
+    "/indexWritable": {
+      "get": {
+        "tags": [
+          "Index"
+        ],
+        "operationId": "browseDefinitionsWriteable",
+        "summary": "Browse through all the service descriptions that is writeable with the given key",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/IndexDTO"
+            }
+          }
+        }
+      }
+    },
+    "/service/{id}": {
+      "get": {
+        "tags": [
+          "Descriptions"
+        ],
+        "operationId": "findDefinition",
+        "summary": "Finds service description by their id",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The id of an item. E.g. '5b3eb4707d0e99000457ffa5'",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ServiceDescriptionContent"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Descriptions"
+        ],
+        "operationId": "updateDefinition",
+        "summary": "Update a service descriptionn",
+        "description": "Update a service description",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "NewNetadata",
+            "in": "body",
+            "description": "New service descriptionn revision",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ServiceDescriptionContent"
+            }
+          }
+        ],
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ServiceDescriptionContent"
+            }
+          }
+        }
+      }
+    },
+    "/new": {
+      "get": {
+        "tags": [
+          "New"
+        ],
+        "operationId": "newDefinition",
+        "summary": "Create new Service Description",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Space",
+            "in": "query",
+            "description": "The search term",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ServiceDescription"
+            }
+          }
+        }
+      }
+    },
+    "/metadata": {
+      "post": {
+        "tags": [
+          "Metadata"
+        ],
+        "operationId": "updateMetadata",
+        "summary": "Update the metadata for a service description",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "NewNetadata",
+            "in": "body",
+            "description": "New metadata",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Metadata"
+            }
+          }
+        ],
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Metadata"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Metadata": {
+      "type": "object",
+      "properties": {
+        "agency": {
+          "type": "string"
+        },
+        "space": {
+          "type": "string"
+        },
+        "visibility": {
+          "type": "boolean"
+        }
+      }
+    },
+    "IndexServiceDTO": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "string"
+        },
+        "logoURI": {
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "#/definitions/Metadata"
+        }
+      }
+    },
+    "IndexDTO": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/IndexServiceDTO"
+          }
+        }
+      }
+    },
+    "ServiceDescriptionContent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "pages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ServiceDescription": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "revisions": {
+          "$ref": "#/definitions/ServiceDescriptionRevision"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "logo": {
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "#/definitions/Metadata"
+        }
+      }
+    },
+    "ServiceDescriptionRevision": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "string"
+        },
+        "content": {
+          "$ref": "#/definitions/ServiceDescriptionContent"
+        }
+      }
+    }
+  }
+}
