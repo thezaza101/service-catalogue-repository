@@ -116,7 +116,7 @@
         ],
         "parameters": [
           {
-            "name": "NewNetadata",
+            "name": "NewMetadata",
             "in": "body",
             "description": "New service descriptionn revision",
             "required": true,
