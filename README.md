@@ -18,11 +18,11 @@ SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5434/postgres?user=postgres&p
 # In another terminal...
 
 # Create new service
-SERVICE_ID="$(curl http://localhost:5000/new?authorization=ignored | jq -r .id)"
+SERVICE_ID="$(curl http://localhost:5001/new?authorization=ignored | jq -r .id)"
 
 # Get service
-curl "http://localhost:5000/repository/service/${SERVICE_ID}" | jq .
+curl "http://localhost:5001/repository/service/${SERVICE_ID}" | jq .
 
 # List all services
-curl http://localhost:5000/repository/index | jq .
+curl http://localhost:5001/repository/index | jq .
 ```
