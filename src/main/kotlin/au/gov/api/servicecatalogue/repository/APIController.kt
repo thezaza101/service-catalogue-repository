@@ -13,6 +13,8 @@ import khttp.get
 import khttp.structures.authorization.BasicAuthorization
 
 import com.beust.klaxon.Klaxon
+import com.beust.klaxon.Parser
+import com.beust.klaxon.JsonObject
 
 
 @RestController
@@ -40,7 +42,7 @@ class APIController {
             val raw = request.getHeader("authorization")
             if (raw==null) return false;
             val apikey = String(Base64.getDecoder().decode(raw.removePrefix("Basic ")))
-        
+
             val user = apikey.split(":")[0]
             val pass= apikey.split(":")[1]
 
@@ -55,6 +57,26 @@ class APIController {
         return true
     }
 
+    data class Event(var key:String = "", var action:String = "", var type:String = "", var name:String = "", var reason:String = "")
+
+    private fun logEvent(request:HttpServletRequest, action:String, type:String, name:String, reason:String) {
+        Thread(Runnable {
+            print("Logging Event...")
+            // http://www.baeldung.com/get-user-in-spring-security
+            val raw = request.getHeader("authorization")
+            val logURL = System.getenv("LogURI")+"new"
+            if (raw==null) throw RuntimeException()
+            val user = String(Base64.getDecoder().decode(raw.removePrefix("Basic "))).split(":")[0]
+            val parser:Parser = Parser()
+            var eventPayload:JsonObject = parser.parse(StringBuilder(Klaxon().toJsonString(Event(user,action,type,name,reason)))) as JsonObject
+            val eventAuth = System.getenv("LogAuthKey")
+            val eventAuthUser = eventAuth.split(":")[0]
+            val eventAuthPass = eventAuth.split(":")[1]
+            var x = khttp.post(logURL,auth=BasicAuthorization(eventAuthUser, eventAuthPass),json = eventPayload)
+            println("Done")
+        }).start()
+    }
+
 
 	fun writableSpaces(request:HttpServletRequest):List<String>{
 
@@ -64,7 +86,6 @@ class APIController {
             val raw = request.getHeader("authorization")
             if (raw==null) return listOf();
             val apikey = String(Base64.getDecoder().decode(raw.removePrefix("Basic ")))
-        
             val user = apikey.split(":")[0]
             val pass= apikey.split(":")[1]
 
@@ -99,6 +120,12 @@ class APIController {
             service.metadata.space=space
             service.metadata.visibility = false
             repository.save(service)
+            try {
+                logEvent(request,"Created","Service",service.id!!,service.revisions.first().content.name)
+            }
+            catch (e:Exception)
+            { println(e.message)}
+
             return service
         }
 
@@ -172,6 +199,11 @@ turn this off for now to prevent !visibility data leaking out
         if(auth) {
             service.metadata = metadata
             repository.save(service)
+            try {
+                logEvent(request,"Updated","Service",service.id!!,"Metadata")
+            }
+            catch (e:Exception)
+            { println(e.message)}
             return service.metadata
         }
 
@@ -187,6 +219,11 @@ turn this off for now to prevent !visibility data leaking out
         
         if(isAuthorisedToSaveService(request, service.metadata.space)) {
             repository.save(service)
+            try {
+                logEvent(request,"Created","Service",service.id!!,revision.name)
+            }
+            catch (e:Exception)
+            { println(e.message)}
             return service
         }
 
@@ -204,6 +241,13 @@ turn this off for now to prevent !visibility data leaking out
             service.revise(revision.name, revision.description, revision.pages)
 
             repository.save(service)
+            var toRevision = service.revisions.count()
+            var fromRevision = toRevision-1
+            try {
+                logEvent(request,"Updated","Service",service.id!!,"Revision from $fromRevision to $toRevision")
+            }
+            catch (e:Exception)
+            { println(e.message)}
             return service.currentContent()
         }
 
