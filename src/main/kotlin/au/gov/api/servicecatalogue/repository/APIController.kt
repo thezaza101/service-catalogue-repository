@@ -16,6 +16,7 @@ import com.beust.klaxon.Klaxon
 import com.beust.klaxon.Parser
 import com.beust.klaxon.JsonObject
 
+import au.gov.api.config.*
 
 @RestController
 class APIController {
@@ -36,7 +37,7 @@ class APIController {
 
     private fun isAuthorisedToSaveService(request:HttpServletRequest, space:String):Boolean{
         if(environment.getActiveProfiles().contains("prod")){
-            val AuthURI = System.getenv("AuthURI")?: throw RuntimeException("No environment variable: AuthURI")
+            val AuthURI = Config.get("AuthURI")
 
             // http://www.baeldung.com/get-user-in-spring-security
             val raw = request.getHeader("authorization")
@@ -47,7 +48,7 @@ class APIController {
             val pass= apikey.split(":")[1]
 
 
-            val authorisationRequest = get(AuthURI + "/api/canWrite",
+            val authorisationRequest = get(AuthURI + "api/canWrite",
                                             params=mapOf("space" to space),
                                             auth=BasicAuthorization(user, pass)
                                        )
@@ -64,7 +65,7 @@ class APIController {
             print("Logging Event...")
             // http://www.baeldung.com/get-user-in-spring-security
             val raw = request.getHeader("authorization")
-            val logURL = System.getenv("LogURI")+"new"
+            val logURL = Config.get("LogURI")+"new"
             if (raw==null) throw RuntimeException()
             val user = String(Base64.getDecoder().decode(raw.removePrefix("Basic "))).split(":")[0]
             val parser:Parser = Parser()
