@@ -20,8 +20,14 @@ login() {
     return
   fi
 
-  cf api $CF_API
-  cf auth "$CF_USER" "$CF_PASSWORD"
+  if [[ "${CIRCLE_BRANCH}" = "master" ]]; then
+    cf api $CF_PROD_API
+    cf auth "$CF_USER" "$CF_PASSWORD_PROD"
+  else
+    cf api $CF_STAGING_API
+    cf auth "$CF_USER" "$CF_PASSWORD_STAGING"
+  fi
+
   cf target -o $CF_ORG
   cf target -s $CF_SPACE
 }
@@ -30,7 +36,11 @@ login() {
 #
 main() {
   login
-  cf push api-gov-au-pg-repository -f manifest-stating.yml
+  if [[ "${CIRCLE_BRANCH}" = "master" ]]; then
+    cf push staging-api-gov-au-pg-repository -f manifest-staging.yml
+  else
+    cf push staging-api-gov-au-pg-repository -f manifest-staging.yml
+  fi
 }
 
 main $@

@@ -4,6 +4,7 @@ jobs:
     branches:
       only:
         - master
+        - staging
         - /rc-.*/
     docker:
       # specify the version you desire here
