@@ -74,14 +74,14 @@ class APIController {
             val eventAuthUser = eventAuth.split(":")[0]
             val eventAuthPass = eventAuth.split(":")[1]
             var x = khttp.post(logURL,auth=BasicAuthorization(eventAuthUser, eventAuthPass),json = eventPayload)
-            println("Done")
+            println("Status:"+x.statusCode)
         }).start()
     }
 
 
 	fun writableSpaces(request:HttpServletRequest):List<String>{
 
-            val AuthURI = System.getenv("AuthURI")?: throw RuntimeException("No environment variable: AuthURI")
+            val AuthURI = Config.get("AuthURI")
 
             // http://www.baeldung.com/get-user-in-spring-security
             val raw = request.getHeader("authorization")
@@ -91,7 +91,7 @@ class APIController {
             val pass= apikey.split(":")[1]
 
 
-            val authorisationRequest = get(AuthURI + "/api/spaces",
+            val authorisationRequest = get(AuthURI + "api/spaces",
                                             auth=BasicAuthorization(user, pass)
                                        )
             if(authorisationRequest.statusCode != 200) return listOf()
