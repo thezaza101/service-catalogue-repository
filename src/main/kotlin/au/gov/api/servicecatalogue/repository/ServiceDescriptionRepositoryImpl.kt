@@ -14,6 +14,9 @@ import java.sql.SQLException
 import java.util.UUID
 import com.fasterxml.jackson.databind.ObjectMapper
 
+import org.springframework.context.event.EventListener
+import org.springframework.boot.context.event.ApplicationReadyEvent
+
 @Service
 class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
     @Value("\${spring.datasource.url}")
@@ -22,11 +25,54 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
     @Autowired
     private lateinit var dataSource: DataSource
 
+    @EventListener(ApplicationReadyEvent::class)
+    fun ingestFromGithub() {
+        val url = "https://github.com/apigovau/api-gov-au-definitions/blob/master/api-documentation.md"
+        val raw = GitHub.getTextOfFlie(url)
+        val mdfm = SingleMarkdownWithFrontMatter(raw)
+        val sd = mdfm.serviceDescription
+
+        try{
+            val existingSd = findByIngestion(url)
+            existingSd.revise(mdfm.name, mdfm.description, mdfm.pages)
+            save(existingSd)
+
+        }catch(e:Exception){
+
+            sd.metadata.ingestSource = url
+            save(sd)
+                
+        }
+
+    }
+
     constructor(){}
 
     constructor(theDataSource:DataSource){
 		dataSource = theDataSource
 	}
+
+
+    private fun findByIngestion(uri: String): ServiceDescription {
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+
+            val q = connection.prepareStatement("select data from service_descriptions where data->'metadata'->>'ingestSource' = ?")
+            q.setString(1, uri)
+            var rs = q.executeQuery()
+            if (!rs.next()) {
+                throw RepositoryException()
+            }
+            val sd = ObjectMapper().readValue(rs.getString("data"), ServiceDescription::class.java)
+            return sd
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+    }
 
     override fun findById(id: String,returnPrivate:Boolean): ServiceDescription {
         var connection: Connection? = null

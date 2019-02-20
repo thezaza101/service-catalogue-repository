@@ -66,6 +66,8 @@ dependencies {
 
     compile 'com.github.apigovau:config:v1.0'
 
+    compile 'org.yaml:snakeyaml:1.21'
+
 }
 
 group 'dir'
