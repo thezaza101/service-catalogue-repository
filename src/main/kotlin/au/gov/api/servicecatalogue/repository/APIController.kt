@@ -177,8 +177,13 @@ turn this off for now to prevent !visibility data leaking out
 */
     @CrossOrigin
     @GetMapping("/colab/{id}")
-    fun getColab(request:HttpServletRequest, @PathVariable id: String): List<GitHub.Conversation> {
-        var x = ghapi.getGitHubConvos("apigovau","api-gov-au-definitions")
+    fun getColab(request:HttpServletRequest,
+                 @PathVariable id: String,
+                 @RequestParam(required = false, defaultValue = "false") showall: Boolean,
+                 @RequestParam(required = false, defaultValue = "true") sort: Boolean,
+                 @RequestParam(required = false, defaultValue = "15") limit: Int
+                 ): List<GitHub.Conversation> {
+        var x = ghapi.getGitHubConvos("apigovau","api-gov-au-definitions",showall,sort,limit)
         return  x
     }
 
