@@ -30,6 +30,7 @@ class APIController {
     @Autowired
     private lateinit var environment: Environment
 
+    private var ghapi = GitHub()
 
     @ResponseStatus(HttpStatus.FORBIDDEN)
     class UnauthorisedToModifyServices() : RuntimeException()
@@ -144,6 +145,7 @@ class APIController {
         for(service in repository.findAll(auth)){
                 output.add(IndexServiceDTO(service.id!!, service.currentContent().name, service.currentContent().description, service.tags, service.logo, service.metadata))
         }
+
         return IndexDTO(output)
     }
 
@@ -173,7 +175,12 @@ turn this off for now to prevent !visibility data leaking out
         return BackupDTO(repository.findAll())
     }
 */
-
+    @CrossOrigin
+    @GetMapping("/colab/{id}")
+    fun getColab(request:HttpServletRequest, @PathVariable id: String): List<GitHub.Conversation> {
+        var x = ghapi.getGitHubConvos("apigovau","api-gov-au-definitions")
+        return  x
+    }
 
     @CrossOrigin
     @GetMapping("/service/{id}")
