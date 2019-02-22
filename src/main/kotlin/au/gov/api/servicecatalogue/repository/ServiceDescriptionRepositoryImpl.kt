@@ -74,6 +74,47 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
         }
     }
 
+    fun saveCache(cache_entry: WebRequestHandler.ResponseContentChacheEntry){
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+            val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS web_cache (id VARCHAR(300), data JSONB, PRIMARY KEY (id))")
+
+            val upsert = connection.prepareStatement("INSERT INTO web_cache(id, data) VALUES(?, ?::jsonb) ON CONFLICT(id) DO UPDATE SET data = EXCLUDED.data")
+
+            upsert.setString(1, cache_entry.request_uri)
+            upsert.setString(2, ObjectMapper().writeValueAsString(cache_entry))
+            upsert.executeUpdate()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+    }
+
+    fun findCacheByURI(URI: String): WebRequestHandler.ResponseContentChacheEntry {
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+
+            val q = connection.prepareStatement("SELECT data FROM web_cache WHERE id = ?")
+            q.setString(1, URI)
+            var rs = q.executeQuery()
+            if (!rs.next()) {
+                throw RepositoryException()
+            }
+            val wc = ObjectMapper().readValue(rs.getString("data"), WebRequestHandler.ResponseContentChacheEntry::class.java)
+            return wc
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+    }
+
     override fun findById(id: String,returnPrivate:Boolean): ServiceDescription {
         var connection: Connection? = null
         try {
