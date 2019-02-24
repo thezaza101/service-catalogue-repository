@@ -3,14 +3,16 @@ package au.gov.api.servicecatalogue.repository
 import java.util.*
 import khttp.get
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
+import java.net.URL
 import java.time.LocalDateTime
 import kotlin.collections.HashMap
 
+@Component
 class WebRequestHandler {
-
-    private var repository: ServiceDescriptionRepositoryImpl = ServiceDescriptionRepositoryImpl()
-
-    data class ResponseContentChacheEntry (var request_uri:String = "-1", var last_updated:LocalDateTime = LocalDateTime.now(), var content:String ="")
+    @Autowired
+    private lateinit var repository: ServiceDescriptionRepositoryImpl
+    data class ResponseContentChacheEntry (var request_uri:String = "-1", var last_updated:Date = WebRequestHandler.getCurrentDateTime(), var content:String ="")
 
     var cache:HashMap<String,ResponseContentChacheEntry> = HashMap<String,ResponseContentChacheEntry>()
 
@@ -23,7 +25,10 @@ class WebRequestHandler {
             }
         }
 
-        if (output.last_updated <= LocalDateTime.now().minusMinutes(30))
+        var x = output.last_updated.time
+        var y = (getCurrentDateTime().time - (60000*30))
+
+        if (x <= y)
             output = getContentFromWeb(uri)
 
         return output.content
@@ -49,7 +54,7 @@ class WebRequestHandler {
 
     private fun getContentFromWeb(uri:String) : ResponseContentChacheEntry {
         val response = get(url = uri).text
-        var x = ResponseContentChacheEntry(uri, LocalDateTime.now(),response)
+        var x = ResponseContentChacheEntry(uri, getCurrentDateTime(),response)
         saveContentToDatabase(x)
         cache.put(x.request_uri,x)
         return x
@@ -57,6 +62,14 @@ class WebRequestHandler {
 
     private fun saveContentToDatabase(content:ResponseContentChacheEntry){
         repository.saveCache(content)
+    }
+
+    companion object{
+        @JvmStatic
+        fun getCurrentDateTime():Date{
+            val dt:LocalDateTime = LocalDateTime.now()
+            return Date(dt.year,dt.monthValue,dt.dayOfMonth,dt.hour,dt.minute)
+        }
     }
 
 

@@ -30,7 +30,8 @@ class APIController {
     @Autowired
     private lateinit var environment: Environment
 
-    private var ghapi = GitHub()
+    @Autowired
+    private lateinit var ghapi:GitHub
 
     @ResponseStatus(HttpStatus.FORBIDDEN)
     class UnauthorisedToModifyServices() : RuntimeException()

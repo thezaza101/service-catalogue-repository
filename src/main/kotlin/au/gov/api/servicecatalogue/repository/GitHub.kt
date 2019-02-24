@@ -7,12 +7,16 @@ import java.util.*
 import com.beust.klaxon.Klaxon
 import com.beust.klaxon.Parser
 import org.json.JSONArray
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 
+@Component
 class GitHub{
 
     data class Conversation(var id:Int,var title:String, var typeTag:String, var mainUserName:String, var mainUserImageURI: String, var numComments: Int, var lastUpdated: String, var state: String, var body: String )
 
-    val rh:WebRequestHandler = WebRequestHandler()
+    @Autowired
+    private lateinit var rh:WebRequestHandler
 
     val gitHubApiBaseUri = "https://api.github.com"
 
