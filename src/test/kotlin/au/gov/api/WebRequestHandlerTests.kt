@@ -16,7 +16,15 @@ class WebRequestHandlerTests {
     @Test
     fun can_save_retrieve_with_cache() {
         setup_cache()
+        var uri = "some_uri"
+        var content = "some_content"
 
+        var testCacheEntry = WebRequestHandler.ResponseContentChacheEntry(request_uri = uri,content = content)
+        repository.saveCache(testCacheEntry)
+
+
+        val cacheEntry = cache.get(uri)
+        Assert.assertEquals(content,cacheEntry)
     }
 
 

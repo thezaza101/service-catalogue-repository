@@ -93,5 +93,22 @@ class GitHub{
         fun getTextOfFlie(uri:String):String{
             return URL(getRawURI(uri)).readText() 
         }
+
+        @JvmStatic
+        fun getUserGitHubUri(uri:String):String{
+            val startPos = uri.indexOf("com/",0,true)+4
+            val endPos = uri.indexOf("/",startPos,true)
+            var result = uri.substring(startPos,endPos)
+            return result
+        }
+
+        @JvmStatic
+        fun getRepoGitHubUri(uri:String):String{
+            val userName = getUserGitHubUri(uri)
+            val startPos = uri.indexOf(userName+"/",0,true) + userName.length+1
+            val endPos = uri.indexOf("/",startPos,true)
+            var result = uri.substring(startPos,endPos)
+            return result
+        }
     }
 }
