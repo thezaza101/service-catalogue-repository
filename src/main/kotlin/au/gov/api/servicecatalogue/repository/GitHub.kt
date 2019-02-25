@@ -10,15 +10,23 @@ import org.json.JSONArray
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
+
+
 @Component
 class GitHub{
 
-    data class Conversation(var id:Int,var title:String, var typeTag:String, var mainUserName:String, var mainUserImageURI: String, var numComments: Int, var lastUpdated: String, var state: String, var body: String )
+    data class Conversation(var id:Int,var title:String, var typeTag:String, var mainUserName:String, var mainUserImageURI: String, var numComments: Int? = 0, var lastUpdated: String, var state: String, var body: String )
 
     @Autowired
     private lateinit var rh:WebRequestHandler
 
     val gitHubApiBaseUri = "https://api.github.com"
+
+    constructor(){}
+
+    constructor(requestHandler: WebRequestHandler){
+        rh = requestHandler
+    }
 
     fun getGitHubConvos(user:String, repo:String, getClosedConvo:Boolean = false, sort:Boolean = false, limit:Int = 10) : List<Conversation> {
         var issues = getIssues(user,repo,getClosedConvo)
@@ -42,7 +50,7 @@ class GitHub{
 
         var output = mutableListOf<Conversation>()
         for (issue in issuesList) {
-            var v = Conversation(issue["number"] as Int,issue["title"] as String,"Issue",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,issue["comments"] as Int ,issue["updated_at"] as String, issue["state"] as String, issue["body"] as String)
+            var v = Conversation(issue["number"] as Int,issue["title"] as String,"Issue",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,issue["comments"] as Int? ,issue["updated_at"] as String, issue["state"] as String, issue["body"] as String)
             output.add(v)
         }
         return output.toList()

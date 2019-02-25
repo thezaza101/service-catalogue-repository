@@ -184,8 +184,10 @@ turn this off for now to prevent !visibility data leaking out
                  @RequestParam(required = false, defaultValue = "true") sort: Boolean,
                  @RequestParam(required = false, defaultValue = "15") limit: Int
                  ): List<GitHub.Conversation> {
-        var x = ghapi.getGitHubConvos("apigovau","api-gov-au-definitions",showall,sort,limit)
-        return  x
+        //var x = ghapi.getGitHubConvos("apigovau","api-gov-au-definitions",showall,sort,limit)
+    var x = ghapi.getGitHubConvos("octocat","Hello-World",showall,sort,limit)
+
+    return  x
     }
 
     @CrossOrigin
