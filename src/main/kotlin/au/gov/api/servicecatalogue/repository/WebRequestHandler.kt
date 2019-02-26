@@ -42,7 +42,6 @@ class WebRequestHandler {
                 println("Error retrieving \"$uri\" from the web, error reason: ${e.message}")
             }
         }
-
         return output.content
     }
 
