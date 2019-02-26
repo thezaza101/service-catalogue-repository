@@ -30,7 +30,7 @@ class SingleMarkdownWithFrontMatter(rawContent:String){
 
     private fun createServiceDescription():ServiceDescription{
         
-        val logo:String = yaml["logo"] as String ?: ""
+        val logo:String = yaml["logo"] as String? ?: ""
 
         val service = ServiceDescription(name, description, pages, listOf(), logo)
 
