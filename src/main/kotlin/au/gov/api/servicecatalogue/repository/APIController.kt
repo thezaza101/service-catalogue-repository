@@ -37,6 +37,9 @@ class APIController {
     class UnauthorisedToModifyServices() : RuntimeException()
     class UnauthorisedToViewServices() : RuntimeException()
 
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    class NoConversationsFound(override val message: String?) : java.lang.Exception()
+
     private fun isAuthorisedToSaveService(request:HttpServletRequest, space:String):Boolean{
         if(environment.getActiveProfiles().contains("prod")){
             val AuthURI = Config.get("AuthURI")
@@ -182,12 +185,25 @@ turn this off for now to prevent !visibility data leaking out
                  @PathVariable id: String,
                  @RequestParam(required = false, defaultValue = "false") showall: Boolean,
                  @RequestParam(required = false, defaultValue = "true") sort: Boolean,
+                 @RequestParam(required = false, defaultValue = "true") flush: Boolean,
                  @RequestParam(required = false, defaultValue = "15") limit: Int
                  ): List<GitHub.Conversation> {
-        //var x = ghapi.getGitHubConvos("apigovau","api-gov-au-definitions",showall,sort,limit)
-    var x = ghapi.getGitHubConvos("octocat","Hello-World",showall,sort,limit)
 
-    return  x
+
+
+        val service = repository.findById(id,false)
+        val ingestSrc = service.metadata.ingestSource
+        if (ingestSrc.contains("github",true))
+        {
+            if (flush)
+            {
+                ghapi.clearCacheForRepo(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc))
+            }
+            return ghapi.getGitHubConvos(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc),showall,sort,limit)
+        }else{
+            throw NoConversationsFound("This service is not connected to github")
+        }
+
     }
 
     @CrossOrigin

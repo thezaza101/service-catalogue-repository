@@ -72,6 +72,11 @@ class GitHub{
         return output.toList()
     }
 
+    fun clearCacheForRepo(user:String, repo:String){
+        val uri = "$gitHubApiBaseUri/repos/$user/$repo"
+        rh.flushCache(uri)
+    }
+
     private fun constructPrams(getClosedConvo:Boolean = false):String{
         if (getClosedConvo)
             return "?state=all"

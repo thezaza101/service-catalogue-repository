@@ -1,5 +1,6 @@
 package au.gov.api.servicecatalogue.repository
 
+import com.sun.org.apache.xpath.internal.operations.Bool
 import java.util.*
 import khttp.get
 import org.springframework.beans.factory.annotation.Autowired
@@ -45,7 +46,7 @@ class WebRequestHandler {
         return output.content
     }
 
-    private fun getContentFromMemoryCache(uri:String) : ResponseContentChacheEntry {
+    fun getContentFromMemoryCache(uri:String) : ResponseContentChacheEntry {
         if(cache.containsKey(uri)){
             return cache.get(uri)!!
         } else {
@@ -53,7 +54,7 @@ class WebRequestHandler {
         }
     }
 
-    private fun getContentFromDatabaseCache(uri:String) : ResponseContentChacheEntry {
+    fun getContentFromDatabaseCache(uri:String) : ResponseContentChacheEntry {
         try{
             val x = repository.findCacheByURI(uri)
             cache.put(x.request_uri,x)
@@ -83,11 +84,36 @@ class WebRequestHandler {
         repository.saveCache(content)
     }
 
+    fun flushCache(uri:String, ignorePrams:Boolean=true){
+        if (ignorePrams) {
+            var pramLesURI = getBaseURIWithoutPrams(uri)
+            repository.deleteCacheByURI(pramLesURI)
+            var keysToRemove = mutableListOf<String>()
+
+            cache.keys.forEach { if (it.startsWith(pramLesURI)) { keysToRemove.add(it)} }
+
+            keysToRemove.forEach { cache.remove(it) }
+        }
+
+        if (!ignorePrams)
+        {
+            repository.deleteCacheByURI(uri,false)
+            cache.remove(uri)
+        }
+    }
+
     companion object{
         @JvmStatic
         fun getCurrentDateTime():Date{
             val dt:LocalDateTime = LocalDateTime.now()
             return Date(dt.year,dt.monthValue,dt.dayOfMonth,dt.hour,dt.minute)
+        }
+
+        @JvmStatic
+        fun getBaseURIWithoutPrams(uri:String):String {
+            val indexOfPrams = uri.indexOf('?')
+            if (indexOfPrams==-1) return  uri
+            return uri.substring(0,indexOfPrams)
         }
     }
 

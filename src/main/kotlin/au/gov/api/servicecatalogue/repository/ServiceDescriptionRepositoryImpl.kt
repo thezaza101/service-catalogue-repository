@@ -13,6 +13,7 @@ import java.sql.Connection
 import java.sql.SQLException
 import java.util.UUID
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.sun.org.apache.xpath.internal.operations.Bool
 
 import org.springframework.context.event.EventListener
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -107,6 +108,27 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
             }
             val wc = ObjectMapper().readValue(rs.getString("data"), WebRequestHandler.ResponseContentChacheEntry::class.java)
             return wc
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+    }
+
+    fun deleteCacheByURI(URI: String,ignorePrams:Boolean=true) {
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+
+            var sql = "DELETE FROM web_cache WHERE id LIKE ?"
+            if (!ignorePrams) {
+                sql = "DELETE FROM web_cache WHERE id = ?"
+            }
+
+            val q = connection.prepareStatement(sql)
+            q.setString(1, URI+"%")
+            var rs = q.execute()
         } catch (e: Exception) {
             e.printStackTrace()
             throw RepositoryException()
