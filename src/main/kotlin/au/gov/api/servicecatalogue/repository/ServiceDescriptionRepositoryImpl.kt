@@ -122,12 +122,14 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
             connection = dataSource.connection
 
             var sql = "DELETE FROM web_cache WHERE id LIKE ?"
+            var likeOp="%"
             if (!ignorePrams) {
                 sql = "DELETE FROM web_cache WHERE id = ?"
+                likeOp = ""
             }
 
             val q = connection.prepareStatement(sql)
-            q.setString(1, URI+"%")
+            q.setString(1, URI+likeOp)
             var rs = q.execute()
         } catch (e: Exception) {
             e.printStackTrace()
