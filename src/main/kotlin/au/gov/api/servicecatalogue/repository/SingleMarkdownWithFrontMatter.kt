@@ -18,8 +18,8 @@ class SingleMarkdownWithFrontMatter(rawContent:String){
         frontMatter = extractFrontMatter()
         yaml = Yaml().load(frontMatter)
 
-        name = yaml["name"] as String ?: "Untitled"
-        description = yaml["description"] as String ?: "No description available"
+        name = yaml["name"] as String? ?: "Untitled"
+        description = yaml["description"] as String? ?: "No description available"
                
         content = lines.drop(contentStartsAtLine).joinToString(separator="\n").removeSuffix("\n")
         pages = splitPages()
