@@ -40,6 +40,9 @@ class APIController {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     class NoConversationsFound(override val message: String?) : java.lang.Exception()
 
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    class InvallidRequest(override val message: String?) : java.lang.Exception()
+
     private fun isAuthorisedToSaveService(request:HttpServletRequest, space:String):Boolean{
         if(environment.getActiveProfiles().contains("prod")){
             val AuthURI = Config.get("AuthURI")
@@ -185,12 +188,10 @@ turn this off for now to prevent !visibility data leaking out
                  @PathVariable id: String,
                  @RequestParam(required = false, defaultValue = "false") showall: Boolean,
                  @RequestParam(required = false, defaultValue = "true") sort: Boolean,
-                 @RequestParam(required = false, defaultValue = "true") flush: Boolean,
-                 @RequestParam(required = false, defaultValue = "15") limit: Int
-                 ): List<GitHub.Conversation> {
-
-
-
+                 @RequestParam(required = false, defaultValue = "false") flush: Boolean,
+                 @RequestParam(required = false, defaultValue = "15") size: Int,
+                 @RequestParam(defaultValue = "1") page: Int
+                 ): PageResult<GitHub.Conversation> {
         val service = repository.findById(id,false)
         val ingestSrc = service.metadata.ingestSource
         if (ingestSrc.contains("github",true))
@@ -199,9 +200,10 @@ turn this off for now to prevent !visibility data leaking out
             {
                 ghapi.clearCacheForRepo(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc))
             }
-            return ghapi.getGitHubConvos(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc),showall,sort,limit)
+            var fullList = ghapi.getGitHubConvos(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc),showall)
+            return PageResult(ghapi.getGitHubConvosHATEOS(fullList,sort,size,page),URLHelper().getURL(request),fullList.count())
         }else{
-            throw NoConversationsFound("This service is not connected to github")
+            throw APIController.NoConversationsFound("This service is not connected to github")
         }
 
     }

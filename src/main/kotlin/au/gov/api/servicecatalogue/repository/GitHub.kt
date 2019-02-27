@@ -28,15 +28,56 @@ class GitHub{
         rh = requestHandler
     }
 
-    fun getGitHubConvos(user:String, repo:String, getClosedConvo:Boolean = false, sort:Boolean = false, limit:Int = 10) : List<Conversation> {
+    fun getGitHubConvosHATEOS(user:String, repo:String, getClosedConvo:Boolean = false, sort:Boolean = false, size:Int = 10, page:Int = 1) : List<Conversation> {
+
+        var completeList = getIssues(user,repo,getClosedConvo)
+        return getGitHubConvosHATEOS(completeList,sort,size,page)
+
+    }
+
+    fun getGitHubConvosHATEOS(convos:List<Conversation>, sort:Boolean = false, size:Int = 10, page:Int = 1) : List<Conversation> {
+        var completeList = convos.toMutableList()
+        if (sort){
+            completeList = completeList.sortedBy { it.lastUpdated  }.toMutableList()
+        }
+
+
+        var pageStart = page-1
+        if (page >1) pageStart = size * pageStart
+        var pageEnd = pageStart + size
+
+        if (pageStart > completeList.count()){
+            if (page>1) {
+                throw APIController.InvallidRequest("No content found at page $page")
+            } else {
+                throw APIController.NoConversationsFound("This service does not cointain any conversations")
+            }
+        }
+        if (pageEnd > completeList.count()) {
+            if (page>1) {
+                if((pageEnd-pageStart)<= completeList.count()) {
+                    pageEnd = completeList.count()
+                } else {
+                    throw APIController.InvallidRequest("No content found at page $page")
+                }
+            } else {
+                if (pageStart == 0) {
+                    pageEnd = completeList.count()
+                } else {
+                    throw APIController.InvallidRequest("No content found at page $page")
+                }
+            }
+        }
+
+        return completeList.subList(pageStart,pageEnd)
+    }
+
+    fun getGitHubConvos(user:String, repo:String, getClosedConvo:Boolean = false) : List<Conversation> {
         var issues = getIssues(user,repo,getClosedConvo)
         var pullRequests = getPullRequests(user,repo,getClosedConvo)
         var completeList = issues.union(pullRequests).toMutableList()
 
-        if (sort){
-            completeList = completeList.sortedBy { it.lastUpdated  }.toMutableList()
-        }
-        return completeList.take(limit)
+        return completeList
 
     }
 

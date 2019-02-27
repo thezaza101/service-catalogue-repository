@@ -79,7 +79,7 @@ My first repository on GitHub.
     @Test
     fun can_limit_convos_from_github() {
         iniTestDB()
-        val convos = ghapi.getGitHubConvos("apigovau","api-gov-au-definitions",limit = 3)
+        val convos = ghapi.getGitHubConvosHATEOS("apigovau","api-gov-au-definitions",size = 3)
         Assert.assertEquals(3,convos.count())
     }
 
