@@ -205,7 +205,31 @@ turn this off for now to prevent !visibility data leaking out
         }else{
             throw APIController.NoConversationsFound("This service is not connected to github")
         }
+    }
 
+    @CrossOrigin
+    @GetMapping("/colab/{id}/comments")
+    fun getColabComments(request:HttpServletRequest,
+                 @PathVariable id: String,
+                 @RequestParam(required = false, defaultValue = "") convoId: String,
+                 @RequestParam(required = false, defaultValue = "") convoType: String,
+                 @RequestParam(required = false, defaultValue = "false") flush: Boolean,
+                 @RequestParam(required = false, defaultValue = "15") size: Int,
+                 @RequestParam(defaultValue = "1") page: Int
+    ): PageResult<GitHub.Comment> {
+        val service = repository.findById(id,false)
+        val ingestSrc = service.metadata.ingestSource
+        if (ingestSrc.contains("github",true))
+        {
+            if (flush)
+            {
+                ghapi.clearCacheForRepo(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc))
+            }
+            var fullList = ghapi.getComments(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc),convoType,convoId)
+            return PageResult(ghapi.getGitHubCommentsHATEOS(fullList,size,page),URLHelper().getURL(request),fullList.count())
+        }else{
+            throw APIController.NoConversationsFound("This service is not connected to github")
+        }
     }
 
     @CrossOrigin
