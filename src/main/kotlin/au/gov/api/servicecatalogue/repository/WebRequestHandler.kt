@@ -3,6 +3,8 @@ package au.gov.api.servicecatalogue.repository
 import com.sun.org.apache.xpath.internal.operations.Bool
 import java.util.*
 import khttp.get
+import khttp.responses.Response
+import khttp.structures.authorization.BasicAuthorization
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import java.net.URL
@@ -65,7 +67,7 @@ class WebRequestHandler {
     }
 
     private fun getContentFromWeb(uri:String) : ResponseContentChacheEntry {
-        val response = get(url = uri)
+        val response = WebRequestHandler.get(uri)
         if (response.statusCode.toString()[0]!='2'){
             throw WebException(response.statusCode.toString() + " " + response.text)
         }
@@ -115,6 +117,22 @@ class WebRequestHandler {
             if (indexOfPrams==-1) return  uri
             return uri.substring(0,indexOfPrams)
         }
+
+        @JvmStatic
+        fun get(uri:String): Response {
+            val ghUser = System.getenv("ghUser")
+            val ghPass = System.getenv("ghToken")
+
+            val authRequest = (ghUser!=null&&ghUser!=""&&ghPass!=null&&ghPass!="")
+            if (authRequest) {
+                return khttp.get(url = uri,auth= BasicAuthorization(ghUser, ghPass))
+            } else {
+                return khttp.get(url = uri)
+            }
+        }
+
+
+
     }
 
 

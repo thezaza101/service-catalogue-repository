@@ -233,6 +233,29 @@ turn this off for now to prevent !visibility data leaking out
     }
 
     @CrossOrigin
+    @GetMapping("/colab/{id}/comments/count")
+    fun getColabComments(request:HttpServletRequest,
+                         @PathVariable id: String,
+                         @RequestParam(required = false, defaultValue = "false") countClosed: Boolean,
+                         @RequestParam(required = false, defaultValue = "true") countPRComments: Boolean,
+                         @RequestParam(defaultValue = "1") page: Int
+    ): Int {
+        val service = repository.findById(id,false)
+        val ingestSrc = service.metadata.ingestSource
+        if (ingestSrc.contains("github",true))
+        {
+            var convoCount = ghapi.getConvoCount(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc),countClosed,countPRComments)
+            var serviceMetadata = service.metadata
+            serviceMetadata.NumberOfConversations = convoCount
+            service.metadata = serviceMetadata
+            repository.save(service)
+            return convoCount
+        }else{
+            throw APIController.NoConversationsFound("This service is not connected to github")
+        }
+    }
+
+    @CrossOrigin
     @GetMapping("/service/{id}")
     fun getService(request:HttpServletRequest, @PathVariable id: String): ServiceDescriptionContent {
         val auth = isAuthorisedToSaveService(request,"admin")

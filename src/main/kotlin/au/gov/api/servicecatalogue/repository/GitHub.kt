@@ -6,6 +6,7 @@ import khttp.get
 import java.util.*
 import com.beust.klaxon.Klaxon
 import com.beust.klaxon.Parser
+import com.sun.org.apache.xpath.internal.operations.Bool
 import org.json.JSONArray
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -92,7 +93,7 @@ class GitHub{
 
         var output = mutableListOf<Conversation>()
         for (issue in issuesList) {
-            var v = Conversation(issue["number"] as Int,issue["title"] as String,"Issue",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,issue["comments"] as Int? ,issue["updated_at"] as String, issue["state"] as String, issue["body"] as String)
+            var v = Conversation(issue["number"] as Int,issue["title"] as String,"issues",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,issue["comments"] as Int? ,issue["updated_at"] as String, issue["state"] as String, issue["body"] as String)
             output.add(v)
         }
         return output.toList()
@@ -108,7 +109,7 @@ class GitHub{
 
         var output = mutableListOf<Conversation>()
         for (issue in pullReqList) {
-            var v = Conversation(issue["number"] as Int,issue["title"] as String,"Pull request",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,-1 ,issue["updated_at"] as String,issue["state"] as String, issue["body"] as String)
+            var v = Conversation(issue["number"] as Int,issue["title"] as String,"pulls",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,-1 ,issue["updated_at"] as String,issue["state"] as String, issue["body"] as String)
             output.add(v)
         }
         return output.toList()
@@ -172,6 +173,23 @@ class GitHub{
 
 
     }
+
+    fun getConvoCount(user:String, repo:String, countClosedConvos:Boolean = false, countPRComment:Boolean = true) : Int {
+        var counter = 0
+        val issues = getIssues(user,repo,countClosedConvos)
+        val pullReqs = getPullRequests(user,repo,countClosedConvos)
+        counter+= issues.count()+pullReqs.count()
+        issues.forEach { counter+=it.numComments!! }
+        if (countPRComment) {
+            pullReqs.forEach {
+                counter += getComments(user,repo,it.typeTag,it.id.toString()).count()
+            }
+        }
+
+        return counter
+    }
+
+
 
     fun clearCacheForRepo(user:String, repo:String){
         val uri = "$gitHubApiBaseUri/repos/$user/$repo"

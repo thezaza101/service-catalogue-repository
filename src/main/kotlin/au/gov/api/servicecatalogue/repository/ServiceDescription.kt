@@ -7,10 +7,9 @@ data class ServiceDescriptionContent(val name:String = "", val description:Strin
 data class ServiceDescriptionRevision(val time:String = "", val content: ServiceDescriptionContent = ServiceDescriptionContent())
 
 
-data class Metadata(var agency:String = "", var space:String = "", var visibility:Boolean = true, var ingestSource:String="")
+data class Metadata(var agency:String = "", var space:String = "", var visibility:Boolean = true, var ingestSource:String = "", var NumberOfConversations:Int = 0)
 
 class ServiceDescription {
-    
 
     @Id
     var id: String? = null
