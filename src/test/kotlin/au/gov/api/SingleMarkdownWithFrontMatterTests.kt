@@ -9,6 +9,14 @@ class SingleMarkdownWithFrontMatterTest{
 
     val frontMatter = """name: "An API"
 description: "A Description"
+logo : "https://api.gov.au/img/catalogue_brand.png"
+tags:
+ - "Security:Open"
+ - "Technology:Rest/JSON"
+ - "OpenAPISpec:Swagger"
+ - "AgencyAcr:ATO"
+ - "Status:Published"
+ - "Category:Metadata"
 """
 
 

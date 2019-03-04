@@ -36,6 +36,7 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
         try{
             val existingSd = findByIngestion(url)
             existingSd.revise(mdfm.name, mdfm.description, mdfm.pages)
+            existingSd.tags = sd.tags
             save(existingSd)
 
         }catch(e:Exception){

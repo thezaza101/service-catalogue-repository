@@ -13,6 +13,7 @@ class SingleMarkdownWithFrontMatter(rawContent:String){
     val serviceDescription:ServiceDescription
     val name:String
     val description:String
+    val tags:List<String>
 
     init{
         frontMatter = extractFrontMatter()
@@ -23,16 +24,23 @@ class SingleMarkdownWithFrontMatter(rawContent:String){
                
         content = lines.drop(contentStartsAtLine).joinToString(separator="\n").removeSuffix("\n")
         pages = splitPages()
-
+        tags = getTagsFromYaml()
         serviceDescription = createServiceDescription()
 
     }
+
+    fun getTagsFromYaml (): List<String> {
+        var tmpTags = yaml["tags"] as List<String>
+        var output = tmpTags ?: mutableListOf<String>()
+        return output
+    }
+
 
     private fun createServiceDescription():ServiceDescription{
         
         val logo:String = yaml["logo"] as String? ?: ""
 
-        val service = ServiceDescription(name, description, pages, listOf(), logo)
+        val service = ServiceDescription(name, description, pages, tags, logo)
 
         return service
     }

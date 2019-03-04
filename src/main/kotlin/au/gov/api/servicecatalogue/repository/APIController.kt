@@ -149,7 +149,13 @@ class APIController {
     fun index(request:HttpServletRequest): IndexDTO {
         val output = mutableListOf<IndexServiceDTO>()
         val auth = isAuthorisedToSaveService(request,"admin")
+
         for(service in repository.findAll(auth)){
+            val ingestSrc = service.metadata.ingestSource
+            if (ingestSrc.contains("github",true)) {
+
+            }
+
                 output.add(IndexServiceDTO(service.id!!, service.currentContent().name, service.currentContent().description, service.tags, service.logo, service.metadata))
         }
 
