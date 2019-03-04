@@ -105,7 +105,7 @@ My first repository on GitHub.
     fun can_get_convo_total () {
         iniTestDB()
         val convoTotal = ghapi.getConvoCount("apigovau", "api-gov-au-definitions")
-        Assert.assertEquals(12,convoTotal)
+        Assert.assertEquals(13,convoTotal)
     }
 
 
