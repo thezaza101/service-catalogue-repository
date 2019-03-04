@@ -125,9 +125,9 @@ class WebRequestHandler {
 
             val authRequest = (ghUser!=null&&ghUser!=""&&ghPass!=null&&ghPass!="")
             if (authRequest) {
-                return khttp.get(url = uri,auth= BasicAuthorization(ghUser, ghPass))
+                return khttp.get(url = uri,auth= BasicAuthorization(ghUser, ghPass),headers=mapOf("Time-Zone" to "Australia/Sydney"))
             } else {
-                return khttp.get(url = uri)
+                return khttp.get(url = uri,headers=mapOf("Time-Zone" to "Australia/Sydney"))
             }
         }
 
