@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component
 @Component
 class GitHub{
 
-    data class Conversation(var id:Int,var title:String, var typeTag:String, var mainUserName:String, var mainUserImageURI: String, var numComments: Int? = 0, var lastUpdated: String, var state: String, var body: String )
+    data class Conversation(var id:Int,var title:String, var typeTag:String, var mainUserName:String, var mainUserImageURI: String, var numComments: Int? = 0, var lastUpdated: String, var state: String, var body: String, var tags:List<String> )
     data class Comment(var username:String, var userImageURI:String, var created_at:String, var body:String)
 
     @Autowired
@@ -93,7 +93,7 @@ class GitHub{
 
         var output = mutableListOf<Conversation>()
         for (issue in issuesList) {
-            var v = Conversation(issue["number"] as Int,issue["title"] as String,"issues",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,issue["comments"] as Int? ,issue["updated_at"] as String, issue["state"] as String, issue["body"] as String)
+            var v = Conversation(issue["number"] as Int,issue["title"] as String,"issues",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,issue["comments"] as Int? ,issue["updated_at"] as String, issue["state"] as String, issue["body"] as String,getConvoTags(issue["labels"] as com.beust.klaxon.JsonArray<*>))
             output.add(v)
         }
         return output.toList()
@@ -109,10 +109,18 @@ class GitHub{
 
         var output = mutableListOf<Conversation>()
         for (issue in pullReqList) {
-            var v = Conversation(issue["number"] as Int,issue["title"] as String,"pulls",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,-1 ,issue["updated_at"] as String,issue["state"] as String, issue["body"] as String)
+            var v = Conversation(issue["number"] as Int,issue["title"] as String,"pulls",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,-1 ,issue["updated_at"] as String,issue["state"] as String, issue["body"] as String,getConvoTags(issue["labels"] as com.beust.klaxon.JsonArray<*>))
             output.add(v)
         }
         return output.toList()
+    }
+
+    fun getConvoTags(tags:com.beust.klaxon.JsonArray<*>) : List<String> {
+        val output = mutableListOf<String>()
+        for (tag in tags) {
+            output.add((tag as JsonObject).get("name") as String)
+        }
+        return output
     }
 
     fun getGitHubCommentsHATEOS(user:String, repo:String, convoType:String, convoId:String, size:Int = 10, page:Int = 1) : List<Comment> {
