@@ -1,5 +1,6 @@
 package au.gov.api.servicecatalogue.repository
 
+import com.sun.org.apache.xpath.internal.operations.Bool
 import org.springframework.data.annotation.Id
 import java.time.LocalDateTime
 
@@ -43,12 +44,39 @@ class ServiceDescription {
     fun currentRevision(): ServiceDescriptionRevision = revisions.last()
     fun currentContent(): ServiceDescriptionContent = currentRevision().content
 
-    fun revise(name:String, description: String, pages : List<String>){
+    fun revise(name:String, description: String, pages : List<String>, force:Boolean = true){
         var nextContent = ServiceDescriptionContent(name, description, pages)
         var nextRevision = ServiceDescriptionRevision(LocalDateTime.now().toString(), nextContent)
 
-        revisions.add(nextRevision)
-        revisions = revisions.takeLast(REVISION_LIMIT).toMutableList()
+        if(force){
+            revisions.add(nextRevision)
+            revisions = revisions.takeLast(REVISION_LIMIT).toMutableList()
+        } else {
+            if(!checkRevisionEqality(nextRevision, currentRevision())) {
+                revisions.add(nextRevision)
+                revisions = revisions.takeLast(REVISION_LIMIT).toMutableList()
+            }
+        }
+
+    }
+
+    fun checkRevisionEqality (rev1: ServiceDescriptionRevision, rev2: ServiceDescriptionRevision) : Boolean {
+        val content = rev1.content
+        val contentToCompare = rev2.content
+        var equal = true
+
+        if (content.name != contentToCompare.name || content.description != contentToCompare.description) equal = false
+
+        if (content.pages.count() != contentToCompare.pages.count()) {
+            equal = false
+        } else {
+            content.pages.forEachIndexed { i, value ->
+                if(contentToCompare.pages[i] != value) {
+                    equal = false
+                }
+            }
+        }
+        return equal
     }
 
     companion object{
