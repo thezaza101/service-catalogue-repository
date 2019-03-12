@@ -17,6 +17,7 @@ import com.beust.klaxon.Parser
 import com.beust.klaxon.JsonObject
 
 import au.gov.api.config.*
+import java.sql.Timestamp
 
 @RestController
 class APIController {
@@ -268,6 +269,24 @@ turn this off for now to prevent !visibility data leaking out
         try{
             val service = repository.findById(id,auth)
             return service.currentContent()
+        } catch (e:Exception){
+            throw UnauthorisedToViewServices()
+        }
+    }
+
+
+    data class ServiceDescriptionRevisionMetadata (var id:Int, var timestamp: String)
+    @CrossOrigin
+    @GetMapping("/service/{id}/revisions")
+    fun getServiceRevisions(request:HttpServletRequest, @PathVariable id: String): List<ServiceDescriptionRevisionMetadata> {
+        val auth = isAuthorisedToSaveService(request,"admin")
+        try{
+            val service = repository.findById(id,auth)
+            var outputList = mutableListOf<ServiceDescriptionRevisionMetadata>()
+            service.revisions.forEachIndexed { index, element ->
+                outputList.add(ServiceDescriptionRevisionMetadata(index,element.time))
+            }
+            return outputList
         } catch (e:Exception){
             throw UnauthorisedToViewServices()
         }
