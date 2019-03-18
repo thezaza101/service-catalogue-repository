@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component
 @Component
 class GitHub{
 
-    data class Conversation(var id:Int,var title:String, var typeTag:String, var mainUserName:String, var mainUserImageURI: String, var numComments: Int? = 0, var lastUpdated: String, var state: String, var body: String, var tags:List<String> )
+    data class Conversation(var id:Int,var title:String, var typeTag:String, var mainUserName:String, var mainUserImageURI: String, var numComments: Int? = 0, var lastUpdated: String, var state: String, var body: String, var tags:List<String>, var section:String="" )
     data class Comment(var username:String, var userImageURI:String, var created_at:String, var body:String)
 
     @Autowired
@@ -93,7 +93,7 @@ class GitHub{
 
         var output = mutableListOf<Conversation>()
         for (issue in issuesList) {
-            var v = Conversation(issue["number"] as Int,issue["title"] as String,"issues",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,issue["comments"] as Int? ,issue["updated_at"] as String, issue["state"] as String, issue["body"] as String,getConvoTags(issue["labels"] as com.beust.klaxon.JsonArray<*>))
+            var v = Conversation(issue["number"] as Int,issue["title"] as String,"issues",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,issue["comments"] as Int? ,issue["updated_at"] as String, issue["state"] as String, issue["body"] as String,getConvoTags(issue["labels"] as com.beust.klaxon.JsonArray<*>),parseSection(issue["body"] as String))
             output.add(v)
         }
         return output.toList()
@@ -109,7 +109,7 @@ class GitHub{
 
         var output = mutableListOf<Conversation>()
         for (issue in pullReqList) {
-            var v = Conversation(issue["number"] as Int,issue["title"] as String,"pulls",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,-1 ,issue["updated_at"] as String,issue["state"] as String, issue["body"] as String,getConvoTags(issue["labels"] as com.beust.klaxon.JsonArray<*>))
+            var v = Conversation(issue["number"] as Int,issue["title"] as String,"pulls",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,-1 ,issue["updated_at"] as String,issue["state"] as String, issue["body"] as String,getConvoTags(issue["labels"] as com.beust.klaxon.JsonArray<*>),parseSection(issue["body"] as String))
             output.add(v)
         }
         return output.toList()
@@ -197,6 +197,16 @@ class GitHub{
         return counter
     }
 
+    fun parseSection(body:String):String {
+        var splitLines = body.split(Regex("\\r?\\n"))
+        val firstline = splitLines.first().toLowerCase()
+        val pos = firstline.indexOf(".md#")
+        var output = ""
+        if (pos != -1) {
+            output = firstline.substring(pos+4,firstline.length)
+        }
+        return output
+    }
 
 
     fun clearCacheForRepo(user:String, repo:String){

@@ -275,7 +275,7 @@ turn this off for now to prevent !visibility data leaking out
     }
 
 
-    data class ServiceDescriptionRevisionMetadata (var id:Int, var timestamp: String)
+    data class ServiceDescriptionRevisionMetadata (var id:String, var timestamp: String)
     @CrossOrigin
     @GetMapping("/service/{id}/revisions")
     fun getServiceRevisions(request:HttpServletRequest, @PathVariable id: String): List<ServiceDescriptionRevisionMetadata> {
@@ -284,7 +284,7 @@ turn this off for now to prevent !visibility data leaking out
             val service = repository.findById(id,auth)
             var outputList = mutableListOf<ServiceDescriptionRevisionMetadata>()
             service.revisions.forEachIndexed { index, element ->
-                outputList.add(ServiceDescriptionRevisionMetadata(index,element.time))
+                outputList.add(ServiceDescriptionRevisionMetadata(element.id,element.time))
             }
             return outputList
         } catch (e:Exception){

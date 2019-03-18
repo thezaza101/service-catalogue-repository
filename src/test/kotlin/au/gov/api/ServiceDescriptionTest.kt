@@ -146,7 +146,7 @@ class ServiceDescriptionTest{
         val name2 = "ServiceName1"
         val description2 = "ServiceDescription1"
         val pages2 = listOf("Page 1","Page 2")
-        svc.revise(name1,description1,pages1,true)
+        svc.revise(name2,description2,pages2,true)
         Assert.assertEquals(2, svc.revisions.count())
     }
 
