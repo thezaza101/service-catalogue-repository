@@ -28,6 +28,12 @@ import java.util.*
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import org.springframework.security.crypto.keygen.KeyGenerators.string
+import org.springframework.security.crypto.keygen.KeyGenerators.string
+import org.springframework.security.crypto.keygen.KeyGenerators.string
+
+
+
+
 
 
 
@@ -1816,6 +1822,52 @@ class MarkdownDiffOutputGenerator : DiffOutputGenerator {
       }
   }
 }
+
+class HTMLDiffOutputGenerator : DiffOutputGenerator {
+  var AttributeName:String = ""
+  var AddAttributeValue:String = ""
+  var RemoveAttributeValue:String = ""
+  var EqualAttributeValue:String = ""
+  var TagType:String = ""
+
+  constructor(tagType:String = "span", attributeName:String = "**~~", addAttributeValue:String = "", removeAttributeValue:String = "", equalAttributeValue:String = "") {
+    TagType = tagType
+    AttributeName = attributeName
+    AddAttributeValue = addAttributeValue
+    RemoveAttributeValue = removeAttributeValue
+    EqualAttributeValue = equalAttributeValue
+  }
+
+  override fun generateOutput(diffrence:Diffrence) : String {
+    return generateHTMLElement(diffrence).replace(System.getProperty("line.separator"),System.getProperty("line.separator")+"<br/>");
+  }
+  override fun generateOutput(diffrence:List<Diffrence>) : String {
+    var output:String = "";
+
+    for (diff in diffrence) {
+      output += generateOutput(diff)
+    }
+    return output;
+  }
+
+  private fun getAttributeValue(d: Diffrence): String {
+    when (d.action) {
+      DiffAction.Add -> return AddAttributeValue
+      DiffAction.Remove -> return RemoveAttributeValue
+      DiffAction.Equal -> return EqualAttributeValue
+      else -> return ""
+    }
+  }
+  private fun generateHTMLElement(d: Diffrence): String {
+    val attText = getAttributeValue(d)
+    return if (attText=="") {
+      d.value
+    } else {
+      "<" + TagType + " " + AttributeName + "=\"" + attText + "\">" + d.value + "</" + TagType + ">"
+    }
+  }
+}
+
 
 class TextDiff {
   enum class RenderMode {
