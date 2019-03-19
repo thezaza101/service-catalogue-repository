@@ -17,6 +17,9 @@ import com.beust.klaxon.Parser
 import com.beust.klaxon.JsonObject
 
 import au.gov.api.config.*
+import au.gov.api.servicecatalogue.Diff.HTMLDiffOutputGenerator
+import au.gov.api.servicecatalogue.Diff.MyersDiff
+import au.gov.api.servicecatalogue.Diff.TextDiff
 import java.sql.Timestamp
 
 @RestController
@@ -39,7 +42,7 @@ class APIController {
     class UnauthorisedToViewServices() : RuntimeException()
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    class NoConversationsFound(override val message: String?) : java.lang.Exception()
+    class NoContentFound(override val message: String?) : java.lang.Exception()
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     class InvallidRequest(override val message: String?) : java.lang.Exception()
@@ -210,7 +213,7 @@ turn this off for now to prevent !visibility data leaking out
             var fullList = ghapi.getGitHubConvos(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc),showall)
             return PageResult(ghapi.getGitHubConvosHATEOS(fullList,sort,size,page),URLHelper().getURL(request),fullList.count())
         }else{
-            throw APIController.NoConversationsFound("This service is not connected to github")
+            throw APIController.NoContentFound("This service is not connected to github")
         }
     }
 
@@ -235,7 +238,7 @@ turn this off for now to prevent !visibility data leaking out
             var fullList = ghapi.getComments(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc),convoType,convoId)
             return PageResult(ghapi.getGitHubCommentsHATEOS(fullList,size,page),URLHelper().getURL(request),fullList.count())
         }else{
-            throw APIController.NoConversationsFound("This service is not connected to github")
+            throw APIController.NoContentFound("This service is not connected to github")
         }
     }
 
@@ -258,7 +261,7 @@ turn this off for now to prevent !visibility data leaking out
             repository.save(service)
             return convoCount
         }else{
-            throw APIController.NoConversationsFound("This service is not connected to github")
+            throw APIController.NoContentFound("This service is not connected to github")
         }
     }
 
@@ -287,6 +290,37 @@ turn this off for now to prevent !visibility data leaking out
                 outputList.add(ServiceDescriptionRevisionMetadata(element.id,element.time))
             }
             return outputList
+        } catch (e:Exception){
+            throw UnauthorisedToViewServices()
+        }
+    }
+
+    @CrossOrigin
+    @GetMapping("/service/{id}/compare")
+    fun getServiceComparison(request:HttpServletRequest, @PathVariable id: String,
+                             @RequestParam(required = false, defaultValue = "") original: String,
+                             @RequestParam(required = false, defaultValue = "") new: String,
+                             @RequestParam(required = false, defaultValue = "0") page: Int,
+                             @RequestParam(required = false,defaultValue = "false") lines:Boolean): String {
+        if (original=="" || new=="" || page == 0) throw NoContentFound("The 'original', 'new', and 'page' parameters must be set")
+        val auth = isAuthorisedToSaveService(request,"admin")
+        try{
+            val service = repository.findById(id,auth)
+            val originalRev = service.getRevisionById("#"+original)
+            val newRev = service.getRevisionById("#"+new)
+
+            var originalPage = ""
+            var newPage = ""
+            try {
+                originalPage = originalRev!!.content.pages[page+1]
+            } catch (e:Exception) {}
+
+            try {
+                newPage = newRev!!.content.pages[page+1]
+            } catch (e:Exception) {}
+
+            val diffObj = TextDiff(MyersDiff(lines), HTMLDiffOutputGenerator("span","style",lines))
+            return diffObj.generateDiffOutput(originalPage,newPage)
         } catch (e:Exception){
             throw UnauthorisedToViewServices()
         }

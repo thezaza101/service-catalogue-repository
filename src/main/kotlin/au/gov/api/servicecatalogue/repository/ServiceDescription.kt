@@ -42,7 +42,9 @@ class ServiceDescription {
                 "ServiceDescription[id=%s, name='%s']",
                 id, currentContent().name)
     }
-
+    fun getRevisionById(revId:String) : ServiceDescriptionRevision? {
+        return revisions.find { it.id == revId }
+    }
     fun currentRevision(): ServiceDescriptionRevision = revisions.last()
     fun currentContent(): ServiceDescriptionContent = currentRevision().content
 

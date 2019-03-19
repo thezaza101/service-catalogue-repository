@@ -20,17 +20,12 @@
 
 package au.gov.api.servicecatalogue.Diff
 
-import com.beust.klaxon.Render
+import com.sun.org.apache.xpath.internal.operations.Bool
 import java.io.UnsupportedEncodingException
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.util.*
-import java.util.regex.Matcher
 import java.util.regex.Pattern
-import org.springframework.security.crypto.keygen.KeyGenerators.string
-import org.springframework.security.crypto.keygen.KeyGenerators.string
-import org.springframework.security.crypto.keygen.KeyGenerators.string
-
 
 
 
@@ -84,6 +79,10 @@ class diff_match_patch {
    */
   var Patch_Margin: Short = 4
 
+  var ByLine:Boolean = true
+
+  constructor(byline:Boolean = true) {ByLine = byline}
+
   /**
    * The number of bits in an int.
    */
@@ -126,7 +125,7 @@ class diff_match_patch {
   @JvmOverloads
   fun diff_main(
     text1: String, text2: String,
-    checklines: Boolean = true
+    checklines: Boolean = ByLine
   ): LinkedList<Diff> {
     // Set a deadline by which time the diff must be complete.
     val deadline: Long
@@ -1696,8 +1695,13 @@ interface TextDiffEngine {
 }
 
 class MyersDiff : TextDiffEngine {
+  var byLine:Boolean = true
+  constructor(compareByLines:Boolean = true) {
+    byLine = compareByLines
+  }
   override fun generateDiff(oldText:String, newText:String) : List<Diffrence> {
-    var dmp = diff_match_patch()
+    var dmp = diff_match_patch(byLine)
+
     var output = mutableListOf<Diffrence>()
     var innerDiff = dmp.diff_main(oldText,newText)
     for (diff in innerDiff) {
@@ -1829,17 +1833,20 @@ class HTMLDiffOutputGenerator : DiffOutputGenerator {
   var RemoveAttributeValue:String = ""
   var EqualAttributeValue:String = ""
   var TagType:String = ""
+  var byLine:Boolean = true
 
-  constructor(tagType:String = "span", attributeName:String = "**~~", addAttributeValue:String = "", removeAttributeValue:String = "", equalAttributeValue:String = "") {
+  constructor(tagType:String = "span", attributeName:String = "style",compareByLines:Boolean = true, addAttributeValue:String = "new", removeAttributeValue:String = "old", equalAttributeValue:String = "") {
     TagType = tagType
     AttributeName = attributeName
     AddAttributeValue = addAttributeValue
     RemoveAttributeValue = removeAttributeValue
     EqualAttributeValue = equalAttributeValue
+    byLine = compareByLines
   }
 
   override fun generateOutput(diffrence:Diffrence) : String {
-    return generateHTMLElement(diffrence).replace(System.getProperty("line.separator"),System.getProperty("line.separator")+"<br/>");
+    return generateHTMLElement(diffrence)
+            //.replace(System.getProperty("line.separator"),System.getProperty("line.separator")+"<br/>");
   }
   override fun generateOutput(diffrence:List<Diffrence>) : String {
     var output:String = "";
@@ -1860,10 +1867,12 @@ class HTMLDiffOutputGenerator : DiffOutputGenerator {
   }
   private fun generateHTMLElement(d: Diffrence): String {
     val attText = getAttributeValue(d)
-    return if (attText=="") {
-      d.value
+    if (attText=="") {
+      return d.value
     } else {
-      "<" + TagType + " " + AttributeName + "=\"" + attText + "\">" + d.value + "</" + TagType + ">"
+      var output:String = "<" + TagType + " " + AttributeName + "=\"" + attText + "\">" + d.value + "</" + TagType + ">"
+      if (byLine) output += '\n'
+      return output
     }
   }
 }
@@ -1891,7 +1900,7 @@ class TextDiff {
     return diffList
   }
 
-  fun GenerateDiffOutput(oldText:String,newText:String):String{
+  fun generateDiffOutput(oldText:String,newText:String):String{
     var output = "";
     var diffList = diffEngine.generateDiff(oldText,newText)
     innerList = diffList

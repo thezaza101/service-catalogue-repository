@@ -52,7 +52,7 @@ class GitHub{
             if (page>1) {
                 throw APIController.InvallidRequest("No content found at page $page")
             } else {
-                throw APIController.NoConversationsFound("This service does not cointain any conversations")
+                throw APIController.NoContentFound("This service does not cointain any conversations")
             }
         }
         if (pageEnd > completeList.count()) {
@@ -139,7 +139,7 @@ class GitHub{
             if (page>1) {
                 throw APIController.InvallidRequest("No content found at page $page")
             } else {
-                throw APIController.NoConversationsFound("This service does not cointain any conversations")
+                throw APIController.NoContentFound("This service does not cointain any conversations")
             }
         }
         if (pageEnd > completeList.count()) {
