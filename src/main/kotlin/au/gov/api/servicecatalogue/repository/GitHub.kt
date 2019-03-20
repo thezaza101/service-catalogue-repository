@@ -2,12 +2,7 @@ package au.gov.api.servicecatalogue.repository
 
 import com.beust.klaxon.JsonObject
 import java.net.URL
-import khttp.get
-import java.util.*
-import com.beust.klaxon.Klaxon
 import com.beust.klaxon.Parser
-import com.sun.org.apache.xpath.internal.operations.Bool
-import org.json.JSONArray
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
@@ -22,7 +17,7 @@ class GitHub{
     @Autowired
     private lateinit var rh:WebRequestHandler
 
-    val gitHubApiBaseUri = "https://api.github.com"
+    private val gitHubApiBaseUri = "https://api.github.com"
 
     constructor(){}
 
@@ -32,7 +27,7 @@ class GitHub{
 
     fun getGitHubConvosHATEOS(user:String, repo:String, getClosedConvo:Boolean = false, sort:Boolean = false, size:Int = 10, page:Int = 1) : List<Conversation> {
 
-        var completeList = getGitHubConvos(user,repo,getClosedConvo)
+        val completeList = getGitHubConvos(user,repo,getClosedConvo)
         return getGitHubConvosHATEOS(completeList,sort,size,page)
 
     }
@@ -75,9 +70,9 @@ class GitHub{
     }
 
     fun getGitHubConvos(user:String, repo:String, getClosedConvo:Boolean = false) : List<Conversation> {
-        var issues = getIssues(user,repo,getClosedConvo)
-        var pullRequests = getPullRequests(user,repo,getClosedConvo)
-        var completeList = issues.union(pullRequests).toMutableList()
+        val issues = getIssues(user,repo,getClosedConvo)
+        val pullRequests = getPullRequests(user,repo,getClosedConvo)
+        val completeList = issues.union(pullRequests).toMutableList()
 
         return completeList
 
@@ -165,12 +160,12 @@ class GitHub{
         val uri = "$gitHubApiBaseUri/repos/$user/$repo/$convoType/$convoId/comments"
         val json = rh.get(uri)
         val parser = Parser()
-        var commentsList= (parser.parse(StringBuilder(json))  as com.beust.klaxon.JsonArray<JsonObject>)
+        val commentsList= (parser.parse(StringBuilder(json))  as com.beust.klaxon.JsonArray<JsonObject>)
 
         var output = mutableListOf<Comment>()
 
         for (comment in commentsList) {
-            var v = Comment((comment["user"] as JsonObject)["login"] as String,
+            val v = Comment((comment["user"] as JsonObject)["login"] as String,
                     (comment["user"] as JsonObject)["avatar_url"] as String,
                     comment["created_at"] as String,
                     comment["body"] as String)
@@ -198,7 +193,7 @@ class GitHub{
     }
 
     fun parseSection(body:String):String {
-        var splitLines = body.split(Regex("\\r?\\n"))
+        val splitLines = body.split(Regex("\\r?\\n"))
         val firstline = splitLines.first().toLowerCase()
         val pos = firstline.indexOf(".md#")
         var output = ""
@@ -240,7 +235,7 @@ class GitHub{
         fun getUserGitHubUri(uri:String):String{
             val startPos = uri.indexOf("com/",0,true)+4
             val endPos = uri.indexOf("/",startPos,true)
-            var result = uri.substring(startPos,endPos)
+            val result = uri.substring(startPos,endPos)
             return result
         }
 
@@ -249,7 +244,7 @@ class GitHub{
             val userName = getUserGitHubUri(uri)
             val startPos = uri.indexOf(userName+"/",0,true) + userName.length+1
             val endPos = uri.indexOf("/",startPos,true)
-            var result = uri.substring(startPos,endPos)
+            val result = uri.substring(startPos,endPos)
             return result
         }
     }

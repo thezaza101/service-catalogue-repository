@@ -1,15 +1,12 @@
 package au.gov.api.servicecatalogue.repository
 
-import com.sun.org.apache.xpath.internal.operations.Bool
+
 import java.util.*
-import khttp.get
 import khttp.responses.Response
 import khttp.structures.authorization.BasicAuthorization
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import java.net.URL
 import java.time.LocalDateTime
-import javax.sql.DataSource
 import kotlin.collections.HashMap
 
 class WebException(message:String) : RuntimeException()
@@ -88,9 +85,9 @@ class WebRequestHandler {
 
     fun flushCache(uri:String, ignorePrams:Boolean=true){
         if (ignorePrams) {
-            var pramLesURI = getBaseURIWithoutPrams(uri)
+            val pramLesURI = getBaseURIWithoutPrams(uri)
             repository.deleteCacheByURI(pramLesURI)
-            var keysToRemove = mutableListOf<String>()
+            val keysToRemove = mutableListOf<String>()
 
             cache.keys.forEach { if (it.startsWith(pramLesURI)) { keysToRemove.add(it)} }
 
