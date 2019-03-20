@@ -300,9 +300,9 @@ turn this off for now to prevent !visibility data leaking out
     fun getServiceComparison(request:HttpServletRequest, @PathVariable id: String,
                              @RequestParam(required = false, defaultValue = "") original: String,
                              @RequestParam(required = false, defaultValue = "") new: String,
-                             @RequestParam(required = false, defaultValue = "0") page: Int,
+                             @RequestParam(required = false, defaultValue = "99") page: Int,
                              @RequestParam(required = false,defaultValue = "false") lines:Boolean): String {
-        if (original=="" || new=="" || page == 0) throw NoContentFound("The 'original', 'new', and 'page' parameters must be set")
+        if (original=="" || new=="" || page == 99) throw NoContentFound("The 'original', 'new', and 'page' parameters must be set")
         val auth = isAuthorisedToSaveService(request,"admin")
         try{
             val service = repository.findById(id,auth)
@@ -312,11 +312,11 @@ turn this off for now to prevent !visibility data leaking out
             var originalPage = ""
             var newPage = ""
             try {
-                originalPage = originalRev!!.content.pages[page+1]
+                originalPage = originalRev!!.content.pages[page]
             } catch (e:Exception) {}
 
             try {
-                newPage = newRev!!.content.pages[page+1]
+                newPage = newRev!!.content.pages[page]
             } catch (e:Exception) {}
 
             val diffObj = TextDiff(MyersDiff(lines), HTMLDiffOutputGenerator("span","style",lines))
