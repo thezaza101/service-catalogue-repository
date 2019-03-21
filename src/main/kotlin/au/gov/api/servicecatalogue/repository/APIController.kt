@@ -227,6 +227,7 @@ turn this off for now to prevent !visibility data leaking out
                  @RequestParam(required = false, defaultValue = "15") size: Int,
                  @RequestParam(defaultValue = "1") page: Int
     ): PageResult<GitHub.Comment> {
+        if (convoId=="" || convoType=="") throw NoContentFound("The 'convoId' and 'convoType' parameters must be set")
         val service = repository.findById(id,false)
         val ingestSrc = service.metadata.ingestSource
         if (ingestSrc.contains("github",true))
