@@ -93,8 +93,8 @@ class ServiceDescription {
                 if (serviceName.length >= 2) {
                     if(serviceName.contains(' ')) {
                         val split = serviceName.split(' ')
-                        var p1 = split[0][1]
-                        var p2 = split[1][1]
+                        var p1 = split[0][0]
+                        var p2 = split[1][0]
                         return "$p1$p2"
                     } else {
                         return serviceName.substring(0,1)
@@ -106,8 +106,6 @@ class ServiceDescription {
             val dateTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC).toString()
             var output:String = "#" + getNameAcrynm() + "${dateTime.substring(dateTime.length-6,dateTime.length)}"
             return output
-
-
         }
     }
 
