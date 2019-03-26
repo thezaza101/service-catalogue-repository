@@ -1,6 +1,6 @@
 ---
 applications:
-- name: api-gov-au-pg-repository
+- name: api-gov-au-repository
   memory: 1G
   buildpack: java_buildpack
   env:
