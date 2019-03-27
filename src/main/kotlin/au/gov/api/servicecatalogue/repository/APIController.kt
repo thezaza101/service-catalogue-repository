@@ -256,6 +256,26 @@ turn this off for now to prevent !visibility data leaking out
     }
 
 
+    @CrossOrigin
+    @ResponseStatus(HttpStatus.OK)  // 200
+    @DeleteMapping("/service/{id}")
+    fun deleteService(@PathVariable id:String, request:HttpServletRequest) {
+        val service = repository.findById(id, true)
+
+        if(isAuthorisedToSaveService(request, service.metadata.space)) {
+
+            repository.delete(id)
+            try {
+                logEvent(request,"Deleted","Service",service.id!!,"Deleted")
+            }
+            catch (e:Exception)
+            { println(e.message)}
+            return
+        }
+
+        throw UnauthorisedToModifyServices()
+    }
+
 
 
 }
