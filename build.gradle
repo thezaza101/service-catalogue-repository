@@ -10,6 +10,12 @@ buildscript {
     }
 }
 
+allprojects {
+    repositories {
+        maven { url "https://jitpack.io" }
+    }
+}
+
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'kotlin'
@@ -57,6 +63,8 @@ dependencies {
     testCompile 'com.opentable.components:otj-pg-embedded:0.12.5'
 
     compile 'khttp:khttp:0.1.0'
+
+    compile 'com.github.apigovau:config:v1.0'
 
 }
 

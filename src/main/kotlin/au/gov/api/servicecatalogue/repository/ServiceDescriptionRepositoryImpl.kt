@@ -54,11 +54,28 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
         }
     }
 
+    override fun delete(id: String) {
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+
+            val q = connection.prepareStatement("DELETE FROM service_descriptions WHERE id = ?")
+            q.setString(1, id)
+            q.executeUpdate()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+    }
+
     override fun count(): Int {
         var connection: Connection? = null
         try {
             connection = dataSource.connection
             val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS service_descriptions (id VARCHAR(50), data JSONB, PRIMARY KEY (id))")
             var rs = stmt.executeQuery("SELECT COUNT(*) c FROM service_descriptions")
             if (!rs.next()) {
                 throw RepositoryException()

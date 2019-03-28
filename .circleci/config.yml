@@ -1,0 +1,53 @@
+version: 2
+jobs:
+  build:
+    branches:
+      only:
+        - master
+        - staging
+        - prod
+    docker:
+      # specify the version you desire here
+      - image: circleci/openjdk:8-jdk
+
+    working_directory: ~/repo
+
+    environment:
+      # Customize the JVM maximum heap limit
+      JVM_OPTS: -Xmx3200m
+      TERM: dumb
+    
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "build.gradle" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+
+      - run: gradle dependencies
+
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: v1-dependencies-{{ checksum "build.gradle" }}
+
+      - run: gradle clean assemble jar
+      
+      # run tests!
+      - run: gradle test
+
+      # get the build scripts
+      - run:
+          name: Download the build scripts
+          command: |
+            curl -v -L -o "buildrc" 'https://raw.githubusercontent.com/apigovau/build/master/buildrc'
+            curl -v -L -o "deploy.sh" 'https://raw.githubusercontent.com/apigovau/build/master/deploy.sh'
+      - run:
+          name: Deploying to cloud.gov.au
+          command: bash ./deploy.sh
+          environment:
+            APPNAME: api-gov-au-repository
+

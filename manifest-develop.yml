@@ -1,11 +1,12 @@
 ---
 applications:
-- name: api-gov-au-pg-repository
+- name: api-gov-au-repository
   memory: 1G
   buildpack: java_buildpack
   env:
     SPRING_PROFILES_ACTIVE: prod
-    AuthURI: https://api.gov.au/keys/producer/
+    config_environment: y.cld.gov.au
+    JAVA_OPTS: -Duser.timezone=Australia/Canberra
   path: build/libs/service-catalogue-repository-1.0.jar
   services:
   - pg-service-repo 

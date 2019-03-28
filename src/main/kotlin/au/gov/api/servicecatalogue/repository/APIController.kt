@@ -13,7 +13,10 @@ import khttp.get
 import khttp.structures.authorization.BasicAuthorization
 
 import com.beust.klaxon.Klaxon
+import com.beust.klaxon.Parser
+import com.beust.klaxon.JsonObject
 
+import au.gov.api.config.*
 
 @RestController
 class APIController {
@@ -34,18 +37,18 @@ class APIController {
 
     private fun isAuthorisedToSaveService(request:HttpServletRequest, space:String):Boolean{
         if(environment.getActiveProfiles().contains("prod")){
-            val AuthURI = System.getenv("AuthURI")?: throw RuntimeException("No environment variable: AuthURI")
+            val AuthURI = Config.get("AuthURI")
 
             // http://www.baeldung.com/get-user-in-spring-security
             val raw = request.getHeader("authorization")
             if (raw==null) return false;
             val apikey = String(Base64.getDecoder().decode(raw.removePrefix("Basic ")))
-        
+
             val user = apikey.split(":")[0]
             val pass= apikey.split(":")[1]
 
 
-            val authorisationRequest = get(AuthURI + "/api/canWrite",
+            val authorisationRequest = get(AuthURI + "api/canWrite",
                                             params=mapOf("space" to space),
                                             auth=BasicAuthorization(user, pass)
                                        )
@@ -55,21 +58,40 @@ class APIController {
         return true
     }
 
+    data class Event(var key:String = "", var action:String = "", var type:String = "", var name:String = "", var reason:String = "")
+
+    private fun logEvent(request:HttpServletRequest, action:String, type:String, name:String, reason:String) {
+        Thread(Runnable {
+            print("Logging Event...")
+            // http://www.baeldung.com/get-user-in-spring-security
+            val raw = request.getHeader("authorization")
+            val logURL = Config.get("LogURI")+"new"
+            if (raw==null) throw RuntimeException()
+            val user = String(Base64.getDecoder().decode(raw.removePrefix("Basic "))).split(":")[0]
+            val parser:Parser = Parser()
+            var eventPayload:JsonObject = parser.parse(StringBuilder(Klaxon().toJsonString(Event(user,action,type,name,reason)))) as JsonObject
+            val eventAuth = System.getenv("LogAuthKey")
+            val eventAuthUser = eventAuth.split(":")[0]
+            val eventAuthPass = eventAuth.split(":")[1]
+            var x = khttp.post(logURL,auth=BasicAuthorization(eventAuthUser, eventAuthPass),json = eventPayload)
+            println("Status:"+x.statusCode)
+        }).start()
+    }
+
 
 	fun writableSpaces(request:HttpServletRequest):List<String>{
 
-            val AuthURI = System.getenv("AuthURI")?: throw RuntimeException("No environment variable: AuthURI")
+            val AuthURI = Config.get("AuthURI")
 
             // http://www.baeldung.com/get-user-in-spring-security
             val raw = request.getHeader("authorization")
             if (raw==null) return listOf();
             val apikey = String(Base64.getDecoder().decode(raw.removePrefix("Basic ")))
-        
             val user = apikey.split(":")[0]
             val pass= apikey.split(":")[1]
 
 
-            val authorisationRequest = get(AuthURI + "/api/spaces",
+            val authorisationRequest = get(AuthURI + "api/spaces",
                                             auth=BasicAuthorization(user, pass)
                                        )
             if(authorisationRequest.statusCode != 200) return listOf()
@@ -97,7 +119,14 @@ class APIController {
 
         if(isAuthorisedToSaveService(request, space)) {
             service.metadata.space=space
+            service.metadata.visibility = false
             repository.save(service)
+            try {
+                logEvent(request,"Created","Service",service.id!!,service.revisions.first().content.name)
+            }
+            catch (e:Exception)
+            { println(e.message)}
+
             return service
         }
 
@@ -171,6 +200,11 @@ turn this off for now to prevent !visibility data leaking out
         if(auth) {
             service.metadata = metadata
             repository.save(service)
+            try {
+                logEvent(request,"Updated","Service",service.id!!,"Metadata")
+            }
+            catch (e:Exception)
+            { println(e.message)}
             return service.metadata
         }
 
@@ -186,6 +220,11 @@ turn this off for now to prevent !visibility data leaking out
         
         if(isAuthorisedToSaveService(request, service.metadata.space)) {
             repository.save(service)
+            try {
+                logEvent(request,"Created","Service",service.id!!,revision.name)
+            }
+            catch (e:Exception)
+            { println(e.message)}
             return service
         }
 
@@ -203,12 +242,39 @@ turn this off for now to prevent !visibility data leaking out
             service.revise(revision.name, revision.description, revision.pages)
 
             repository.save(service)
+            var toRevision = service.revisions.count()
+            var fromRevision = toRevision-1
+            try {
+                logEvent(request,"Updated","Service",service.id!!,"Revision from $fromRevision to $toRevision")
+            }
+            catch (e:Exception)
+            { println(e.message)}
             return service.currentContent()
         }
 
         throw UnauthorisedToModifyServices()
     }
 
+
+    @CrossOrigin
+    @ResponseStatus(HttpStatus.OK)  // 200
+    @DeleteMapping("/service/{id}")
+    fun deleteService(@PathVariable id:String, request:HttpServletRequest) {
+        val service = repository.findById(id, true)
+
+        if(isAuthorisedToSaveService(request, service.metadata.space)) {
+
+            repository.delete(id)
+            try {
+                logEvent(request,"Deleted","Service",service.id!!,"Deleted")
+            }
+            catch (e:Exception)
+            { println(e.message)}
+            return
+        }
+
+        throw UnauthorisedToModifyServices()
+    }
 
 
 

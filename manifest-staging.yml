@@ -1,14 +1,14 @@
 ---
 applications:
-- name: api-gov-au-repository
+- name: staging-api-gov-au-repository
   memory: 1G
   buildpack: java_buildpack
   env:
     SPRING_PROFILES_ACTIVE: prod
-    config_environment: api.gov.au
+    config_environment: staging.api.gov.au
     JAVA_OPTS: -Duser.timezone=Australia/Canberra
   path: build/libs/service-catalogue-repository-1.0.jar
   services:
-  - api-gov-au-repository-pg-shared
+  - staging-pg-service-repo
   routes:
-  - route: api.gov.au/repository
+  - route: staging.api.gov.au/repository
