@@ -17,6 +17,8 @@ import com.sun.org.apache.xpath.internal.operations.Bool
 
 import org.springframework.context.event.EventListener
 import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.scheduling.annotation.Scheduled
+
 
 @Service
 class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
@@ -27,12 +29,12 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
     private lateinit var dataSource: DataSource
 
     @EventListener(ApplicationReadyEvent::class)
+    @Scheduled(fixedRate = 3600000)
     fun ingestFromGithub() {
         val url = "https://github.com/apigovau/api-gov-au-definitions/blob/master/api-documentation.md"
         val raw = GitHub.getTextOfFlie(url)
         val mdfm = SingleMarkdownWithFrontMatter(raw)
         val sd = mdfm.serviceDescription
-
         try{
             val existingSd = findByIngestion(url)
             existingSd.revise(mdfm.name, mdfm.description, mdfm.pages,false)
