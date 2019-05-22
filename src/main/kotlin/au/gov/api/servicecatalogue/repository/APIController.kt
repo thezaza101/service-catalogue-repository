@@ -332,13 +332,14 @@ turn this off for now to prevent !visibility data leaking out
 
     @CrossOrigin
     @PostMapping("/metadata/{id}")
-    fun setMetadata(@RequestBody metadata: Metadata, @PathVariable id:String, request:HttpServletRequest): Metadata{
+    fun setMetadata(@RequestBody metadata: Metadata, @PathVariable id:String, @RequestParam(required = false, defaultValue = "") logo: String,  request:HttpServletRequest): Metadata{
 
         val auth = isAuthorisedToSaveService(request, "admin")
         val service = repository.findById(id,auth)
         
         if(auth) {
             service.metadata = metadata
+            if(logo!="") service.logo = logo
             repository.save(service)
             try {
                 logEvent(request,"Updated","Service",service.id!!,"Metadata")
