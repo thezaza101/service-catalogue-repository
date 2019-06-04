@@ -1,7 +1,6 @@
-package au.gov.api.servicecatalogue.repository
+package au.gov.api.servicecatalogue.repository.definitions
 
-import au.gov.api.json.JsonHelper
-//import au.gov.api.json.JsonLd
+import au.gov.api.servicecatalogue.repository.RepositoryException
 import com.beust.klaxon.*
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -12,7 +11,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.annotation.Bean
 import org.springframework.context.event.EventListener
-import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
 import java.sql.Connection
 import java.sql.SQLException
@@ -23,7 +21,7 @@ enum class Direction {
     FROM, TO, UNDIRECTED
 }
 
-data class Result(@JsonIgnore var meta:Meta, val direction: Direction, val to: String, var toName:String = "")
+data class Result(@JsonIgnore var meta: Meta, val direction: Direction, val to: String, var toName:String = "")
 data class Meta(val type:String, val directed:Boolean, val verbs : Map<Direction, String>)
 data class RelationDTO(val from:String, val type:String, val to:String, val direction: Direction)
 
@@ -56,7 +54,7 @@ class RelationshipRepository {
     }
 
     @EventListener(ApplicationReadyEvent::class)
-    fun test() {
+    fun initialise() {
         addMetas()
         addJson()
         addJsonLd()

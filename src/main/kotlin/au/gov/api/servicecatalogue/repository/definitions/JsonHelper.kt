@@ -1,4 +1,4 @@
-package au.gov.api.json
+package au.gov.api.servicecatalogue.repository.definitions
 
 import com.beust.klaxon.Parser
 

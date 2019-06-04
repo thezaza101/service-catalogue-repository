@@ -20,7 +20,9 @@ import au.gov.api.config.*
 import au.gov.api.servicecatalogue.Diff.HTMLDiffOutputGenerator
 import au.gov.api.servicecatalogue.Diff.MyersDiff
 import au.gov.api.servicecatalogue.Diff.TextDiff
-import java.sql.Timestamp
+import au.gov.api.servicecatalogue.repository.definitions.Meta
+import au.gov.api.servicecatalogue.repository.definitions.RelationshipRepository
+import au.gov.api.servicecatalogue.repository.definitions.Result
 
 @RestController
 class APIController {
@@ -430,7 +432,7 @@ turn this off for now to prevent !visibility data leaking out
 
     @CrossOrigin
     @GetMapping("/definitions/relationships/meta")
-    fun getMetaForRelationshipType(request:HttpServletRequest, @RequestParam relationType: String):Meta {
+    fun getMetaForRelationshipType(request:HttpServletRequest, @RequestParam relationType: String): Meta {
         return  relationRepository.getMeta(relationType)
     }
 
