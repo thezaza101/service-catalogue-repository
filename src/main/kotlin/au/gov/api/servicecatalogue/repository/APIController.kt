@@ -417,6 +417,24 @@ turn this off for now to prevent !visibility data leaking out
         throw UnauthorisedToModifyServices()
     }
 
+    //Definitions
+
+    @Autowired
+    lateinit var relationRepository: RelationshipRepository
+
+    @CrossOrigin
+    @GetMapping("/definitions/relationships")
+    fun getRelationshipsForId(request:HttpServletRequest, @RequestParam id: String): Map<String,List<Result>> {
+        return relationRepository.getRelationshipFor(id)
+    }
+
+    @CrossOrigin
+    @GetMapping("/definitions/relationships/meta")
+    fun getMetaForRelationshipType(request:HttpServletRequest, @RequestParam relationType: String):Meta {
+        return  relationRepository.getMeta(relationType)
+    }
+
+
 
 
 }
