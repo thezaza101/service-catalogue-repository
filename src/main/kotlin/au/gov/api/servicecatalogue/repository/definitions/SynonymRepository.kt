@@ -20,7 +20,7 @@ import javax.sql.DataSource
 data class SynonymExpansionResults(val expandedQuery: String, val usedSynonyms: Map<String, List<String>>)
 
 @Component
-class SynonymService {
+class SynonymRepository {
 
     @Value("\${spring.datasource.url}")
     private var dbUrl: String? = null

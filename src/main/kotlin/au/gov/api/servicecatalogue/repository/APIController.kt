@@ -20,9 +20,7 @@ import au.gov.api.config.*
 import au.gov.api.servicecatalogue.Diff.HTMLDiffOutputGenerator
 import au.gov.api.servicecatalogue.Diff.MyersDiff
 import au.gov.api.servicecatalogue.Diff.TextDiff
-import au.gov.api.servicecatalogue.repository.definitions.Meta
-import au.gov.api.servicecatalogue.repository.definitions.RelationshipRepository
-import au.gov.api.servicecatalogue.repository.definitions.Result
+import au.gov.api.servicecatalogue.repository.definitions.*
 
 @RestController
 class APIController {
@@ -434,6 +432,14 @@ turn this off for now to prevent !visibility data leaking out
     @GetMapping("/definitions/relationships/meta")
     fun getMetaForRelationshipType(request:HttpServletRequest, @RequestParam relationType: String): Meta {
         return  relationRepository.getMeta(relationType)
+    }
+
+    @Autowired
+    lateinit var syntaxRepository: SyntaxRepository
+    @CrossOrigin
+    @GetMapping("/definitions/syntax")
+    fun getSyntax(request:HttpServletRequest, @RequestParam id: String): Syntax {
+        return  syntaxRepository.findOne(id)!!
     }
 
 
