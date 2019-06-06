@@ -62,6 +62,51 @@ class SynonymRepository {
         }
     }
 
+    fun saveSynonym(synonym:List<String>)
+    {
+        var stringToSave = getDBString(synonym)
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+            val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS synonyms (synonym JSONB)")
+            val upsert = connection.prepareStatement("INSERT INTO synonyms(synonym) VALUES(?::jsonb)")
+            upsert.setString(1, stringToSave)
+            upsert.executeUpdate()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+
+        //The Synonym needs to be added to the in-memory list as SQL updates do not reflect until the app is restarted
+        addSynonymToMemoryDB(stringToSave)
+    }
+
+    private fun addSynonymToMemoryDB(synonym:String)
+    {
+        var syns = getSynonymList(synonym)
+        origSynonyms.add(syns)
+
+        for (synonymWord in syns) {
+            if (synonymWord in synonyms) {
+                println("Duplicate synonym found: $synonymWord\n${synonyms[synonymWord]}\n$synonym")
+                System.exit(1)
+            }
+            synonyms[synonymWord] = syns
+        }
+    }
+
+    private fun getDBString(input:List<String>):String {
+        var output = "[\""
+        for (s in input) {
+            output += "$s\",\""
+        }
+        output = output.substring(0,output.length-2) + "]"
+        return output
+    }
+
     private fun getSynonyms() : List<List<String>> {
         var connection: Connection? = null
         try {
@@ -92,6 +137,8 @@ class SynonymRepository {
         }
         return synonyms
     }
+
+
 
     fun expand(input:String): SynonymExpansionResults {
         var output = ""
