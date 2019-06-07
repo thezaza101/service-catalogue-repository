@@ -442,6 +442,23 @@ turn this off for now to prevent !visibility data leaking out
         return  syntaxRepository.findOne(id)!!
     }
 
+    @Autowired
+    lateinit var synonymRepository: SynonymRepository
+
+    @CrossOrigin
+    @GetMapping("/definitions/synonyms")
+    fun getSynonym(request:HttpServletRequest): MutableList<List<String>> {
+        return  synonymRepository.origSynonyms
+    }
+
+    @CrossOrigin
+    @GetMapping("/definitions/synonyms/expand")
+    fun getExpandedSynonym(request:HttpServletRequest, @RequestParam query: String): SynonymExpansionResults {
+        return  synonymRepository.expand(query)
+    }
+
+
+
 
 
 
