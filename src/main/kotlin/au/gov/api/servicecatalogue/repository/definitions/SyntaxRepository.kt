@@ -1,6 +1,7 @@
 package au.gov.api.servicecatalogue.repository.definitions
 
 import au.gov.api.servicecatalogue.repository.RepositoryException
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -22,7 +23,7 @@ import kotlin.collections.mutableMapOf
 import kotlin.collections.set
 
 
-data class Syntax(val identifier: String, val syntaxes: Map<String, Map<String, String>>)
+data class Syntax(@JsonIgnore val identifier: String, val syntaxes: Map<String, Map<String, String>>)
 
 @Component
 class SyntaxRepository {

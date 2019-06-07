@@ -140,6 +140,44 @@ class RelationshipRepository {
         return metas[type]!!
     }
 
+    data class NewRelationship(var type: String, var dir:Direction, var content: Pair<String,String>)
+
+    fun saveRelationship(relation:NewRelationship)
+    {
+        var stringToSave = getDBString(relation)
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+            val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS synonyms (synonym JSONB)")
+            val upsert = connection.prepareStatement("INSERT INTO synonyms(synonym) VALUES(?::jsonb)")
+            upsert.setString(1, stringToSave)
+            upsert.executeUpdate()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+
+        //The Synonym needs to be added to the in-memory list as SQL updates do not reflect until the app is restarted
+        addRelationshipToMemoryDB(relation)
+    }
+
+    fun getDBString(rel:NewRelationship) : String {
+        var output = "{\"type\":\"${rel.type}\",\"content\":[[\"${rel.content.first}\",\"${rel.content.second}\"]]}"
+        return output
+    }
+
+    fun addRelationshipToMemoryDB (rel:NewRelationship) {
+        addResult(rel.content.first, rel.type, rel.content.second, Direction.TO)
+        addResult(rel.content.second, rel.type, rel.content.first, Direction.FROM)
+    }
+    fun addMetas (meta:Meta) {
+        metas[meta.type] = meta
+    }
+
+
     @Bean
     @Throws(SQLException::class)
     fun dataSource(): DataSource? {
