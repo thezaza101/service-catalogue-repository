@@ -2,7 +2,7 @@ package au.gov.api.servicecatalogue.repository.definitions
 
 import au.gov.api.servicecatalogue.repository.QueryLogger
 import au.gov.api.servicecatalogue.repository.RepositoryException
-//import au.gov.dxa.search.LuceneQueryParser
+import au.gov.api.servicecatalogue.repository.definitions.LuceneQueryParser
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
 
@@ -281,10 +281,10 @@ class DefinitionRepository {
         var queryString = query
         if(!raw && !ignoreSynonym) {
             val synonymExpansion = synonymService.expand(query.toLowerCase())
-            queryString = ""//LuceneQueryParser.parse(synonymExpansion.expandedQuery, domain)
+            queryString = LuceneQueryParser.parse(synonymExpansion.expandedQuery, domain)
             usedSynonyms = synonymExpansion.usedSynonyms
         } else if (!raw ){
-            queryString = ""//LuceneQueryParser.parse(queryString, domain)
+            queryString = LuceneQueryParser.parse(queryString, domain)
         }
         val queryParser = QueryParser("name",analyzer)
 
