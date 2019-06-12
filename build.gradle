@@ -60,6 +60,10 @@ dependencies {
     compile 'com.zaxxer:HikariCP:2.6.0'
     compile 'com.fasterxml.jackson.core:jackson-databind'
 
+    compile 'org.apache.lucene:lucene-core:7.2.0'
+    compile 'org.apache.lucene:lucene-analyzers-common:7.2.0'
+    compile 'org.apache.lucene:lucene-queryparser:7.2.0'
+
     testCompile 'com.opentable.components:otj-pg-embedded:0.12.5'
 
     compile 'khttp:khttp:0.1.0'

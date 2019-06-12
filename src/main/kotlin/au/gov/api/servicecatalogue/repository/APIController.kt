@@ -20,7 +20,7 @@ import au.gov.api.config.*
 import au.gov.api.servicecatalogue.Diff.HTMLDiffOutputGenerator
 import au.gov.api.servicecatalogue.Diff.MyersDiff
 import au.gov.api.servicecatalogue.Diff.TextDiff
-import java.sql.Timestamp
+import au.gov.api.servicecatalogue.repository.definitions.*
 
 @RestController
 class APIController {
@@ -416,7 +416,4 @@ turn this off for now to prevent !visibility data leaking out
 
         throw UnauthorisedToModifyServices()
     }
-
-
-
 }

@@ -127,16 +127,5 @@ class WebRequestHandler {
                 return khttp.get(url = uri,headers=mapOf("Time-Zone" to "Australia/Sydney"))
             }
         }
-
-
-
     }
-
-
-
-
-
-
-
-
 }
