@@ -436,6 +436,7 @@ turn this off for now to prevent !visibility data leaking out
 
     @Autowired
     lateinit var syntaxRepository: SyntaxRepository
+
     @CrossOrigin
     @GetMapping("/definitions/syntax")
     fun getSyntax(request:HttpServletRequest, @RequestParam id: String): Syntax {
@@ -456,6 +457,64 @@ turn this off for now to prevent !visibility data leaking out
     fun getExpandedSynonym(request:HttpServletRequest, @RequestParam query: String): SynonymExpansionResults {
         return  synonymRepository.expand(query)
     }
+
+    @Autowired
+    lateinit var definitionRepository: DefinitionRepository
+
+    @CrossOrigin
+    @GetMapping("/definitions")
+    fun getDefinitions(request:HttpServletRequest, @RequestParam pageNumber: Int, @RequestParam pageSize: Int, @RequestParam(required = false, defaultValue = "") domain: String): List<Definition> {
+        when (domain=="") {
+            true -> return  definitionRepository.findAll(pageNumber, pageSize)
+            false -> return definitionRepository.findAllInDomain(pageNumber, pageSize,domain)
+        }
+    }
+
+    @CrossOrigin
+    @GetMapping("/definitions/search")
+    fun searchDefinitions(request:HttpServletRequest, @RequestParam query: String, @RequestParam(required = false, defaultValue = "")  domain: Array<String>, @RequestParam page: Int, @RequestParam size: Int, @RequestParam raw:Boolean, @RequestParam ignoreSynonym: Boolean): SearchResults {
+        var dom = ""
+        domain.forEach { dom +=  "$it " }
+        dom = dom.trim()
+        return definitionRepository.search(query,dom,page,size,raw,ignoreSynonym)
+    }
+
+    @CrossOrigin
+    @GetMapping("/definitions/definition/detail")
+    fun getDefinitionDetail(request:HttpServletRequest, @RequestParam id: String): Definition {
+        return  definitionRepository.findOne(id)
+    }
+
+    @CrossOrigin
+    @GetMapping("/definitions/domains")
+    fun getDefinitionDomains(request:HttpServletRequest, @RequestParam(required = false, defaultValue = "") domain: String): List<Domain> {
+        if(domain=="") {
+            return  definitionRepository.getDomains()
+        } else {
+            var d = definitionRepository.getDomainByName(domain) ?: Domain("","","")
+            var output:MutableList<Domain> = mutableListOf()
+            output.add(d)
+            return output
+        }
+    }
+
+    @CrossOrigin
+    @GetMapping("/definitions/definition/count")
+    fun getDefinitionsCount(request:HttpServletRequest, @RequestParam(required = false, defaultValue = "") domain: String): Int {
+        if(domain=="") {
+            return  definitionRepository.howManyDefinitions()
+        } else {
+            return  definitionRepository.howManyDefinitionsInDomain(domain)
+        }
+    }
+    @Autowired
+    private lateinit var dictionaryService: DictionaryService
+    @CrossOrigin
+    @GetMapping("/definitions/dict")
+    fun getDefinitionDictCorrection(request:HttpServletRequest, @RequestParam query: String, @RequestParam(required = false, defaultValue = "")  domains: Array<String>): String {
+        return dictionaryService.getDictionaryCorrection(query,domains)
+    }
+
 
 
 

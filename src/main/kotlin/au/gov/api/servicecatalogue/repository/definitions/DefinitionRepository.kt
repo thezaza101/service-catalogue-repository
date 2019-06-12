@@ -52,7 +52,7 @@ import kotlin.collections.toList
 
 
 
-data class SearchResults<T>(val results: List<T>, val howManyResults: Int, val usedSynonyms: Map<String,List<String>>? = null)
+data class SearchResults(val results: List<Definition>, val howManyResults: Int, val usedSynonyms: Map<String,List<String>>? = null)
 class Domain(val name:String, @JsonIgnore val _acronym: String, val version:String){
     var acronym:String = _acronym.toLowerCase()
 }
@@ -265,12 +265,12 @@ class DefinitionRepository {
                 type,
                 values,
                 facets,
-                domains.filter { it -> it.value.name == domain}.values.first().acronym,
+                domainAcronym,
                 sourceURL
         )
     }
 
-    fun search(query: String, domain:String, page: Int, size: Int, raw:Boolean, ignoreSynonym: Boolean): SearchResults<Definition> {
+    fun search(query: String, domain:String, page: Int, size: Int, raw:Boolean, ignoreSynonym: Boolean): SearchResults {
         val maxSearch = 500
 
 

@@ -9,18 +9,16 @@ public class DictionaryService {
     @Autowired
     private lateinit var repository: DefinitionRepository
 
-    fun getDictionaryCorrection(query:String, filters:Filters? = null):String
+    fun getDictionaryCorrection(query:String, domains:Array<String>):String
     {
         try {
             if (query.length > 3) {
-                if (filters == null) {
+                if (domains.count() == 0 || domains.first() == "") {
                     return runQuery(query, repository.getAllDefinitions())
                 } else {
-                    if (filters.Domains.count() > 0) {
+                    if (domains.count() > 0) {
                         var filterdList: MutableList<Definition> = mutableListOf()
-                        var domainStrings: MutableList<String> = mutableListOf()
-                        filters.Domains.forEach { domainStrings.add(it.acronym) }
-                        domainStrings.forEach { filterdList.addAll(repository.getAllDefinitionsInDomain(it)) }
+                        domains.forEach { filterdList.addAll(repository.getAllDefinitionsInDomain(it)) }
                         return runQuery(query, filterdList)
                     } else {
                         return runQuery(query, repository.getAllDefinitions())
