@@ -40,7 +40,10 @@ public class DictionaryService {
         var results: MutableList<DistanceResult> = mutableListOf()
         filterdDef.forEach { results.add(DistanceResult(it.name, levenshtein(query,it.name))) }
         results.sortBy { it.distance  }
-        return results.first().value
+        when (results.first().distance < query.length/1.5) {
+            true -> return results.first().value
+            false -> return ""
+        }
     }
 
     private fun levenshtein(lhs : CharSequence, rhs : CharSequence) : Int {
@@ -72,7 +75,3 @@ public class DictionaryService {
     }
 }
 data class DistanceResult(var value:String, var distance:Int)
-
-class Filters(val Domains:MutableList<Domain>, val IgnoreSynonym: Boolean){
-
-}
