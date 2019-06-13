@@ -12,6 +12,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.annotation.Bean
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
+import java.lang.StringBuilder
 import java.sql.Connection
 import java.sql.SQLException
 import javax.sql.DataSource
@@ -111,7 +112,8 @@ class RelationshipRepository {
     private fun addMetas() {
         if (metas.isEmpty()) {
             @Suppress("UNCHECKED_CAST")
-            for (jsonRelationship in JsonHelper.parse("/relationships/meta.json") as JsonArray<JsonObject>) {
+            for (jsonString in getMetaJsonFromDB()) {
+                var jsonRelationship = Parser().parse(StringBuilder(jsonString)) as JsonObject
                 val type = jsonRelationship.string("type") ?: ""
                 val directed = jsonRelationship.boolean("directed") ?: false
                 val to = jsonRelationship.string("to") ?: ""
@@ -120,6 +122,27 @@ class RelationshipRepository {
                 val meta = Meta(type, directed, verbMap)
                 metas[type] = meta
             }
+        }
+    }
+
+    private fun getMetaJsonFromDB() : List<String> {
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+
+            val stmt = connection.createStatement()
+            val rs = stmt.executeQuery("SELECT meta FROM definitions_relation_meta")
+            val rv: MutableList<String> = mutableListOf()
+            while (rs.next()) {
+                rv.add(rs.getString("meta"))
+            }
+            return rv.toList()
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
         }
     }
 
