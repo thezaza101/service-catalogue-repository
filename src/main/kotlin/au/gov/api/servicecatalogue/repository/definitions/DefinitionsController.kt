@@ -1,10 +1,7 @@
 package au.gov.api.servicecatalogue.repository.definitions
 
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.web.bind.annotation.CrossOrigin
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import javax.servlet.http.HttpServletRequest
 
 @RestController
@@ -12,6 +9,16 @@ class DefinitionsController {
     @Autowired
     lateinit var relationRepository: RelationshipRepository
 
+    @Autowired
+    lateinit var syntaxRepository: SyntaxRepository
+
+    @Autowired
+    lateinit var synonymRepository: SynonymRepository
+
+    @Autowired
+    private lateinit var dictionaryService: DictionaryService
+
+    //Get requests
     @CrossOrigin
     @GetMapping("/definitions/relationships")
     fun getRelationshipsForId(request: HttpServletRequest, @RequestParam id: String): Map<String,List<Result>> {
@@ -24,17 +31,11 @@ class DefinitionsController {
         return  relationRepository.getMeta(relationType)
     }
 
-    @Autowired
-    lateinit var syntaxRepository: SyntaxRepository
-
     @CrossOrigin
     @GetMapping("/definitions/syntax")
     fun getSyntax(request: HttpServletRequest, @RequestParam id: String): Syntax {
         return  syntaxRepository.findOne(id)!!
     }
-
-    @Autowired
-    lateinit var synonymRepository: SynonymRepository
 
     @CrossOrigin
     @GetMapping("/definitions/synonyms")
@@ -81,7 +82,7 @@ class DefinitionsController {
         if(domain=="") {
             return  definitionRepository.getDomains()
         } else {
-            var d = definitionRepository.getDomainByAcronym(domain) ?: Domain("","","")
+            val d = definitionRepository.getDomainByAcronym(domain) ?: Domain("","","")
             var output:MutableList<Domain> = mutableListOf()
             output.add(d)
             return output
@@ -91,17 +92,27 @@ class DefinitionsController {
     @CrossOrigin
     @GetMapping("/definitions/definition/count")
     fun getDefinitionsCount(request: HttpServletRequest, @RequestParam(required = false, defaultValue = "") domain: String): Int {
-        if(domain=="") {
-            return  definitionRepository.howManyDefinitions()
-        } else {
-            return  definitionRepository.howManyDefinitionsInDomain(domain)
+        when(domain=="") {
+            true -> return definitionRepository.howManyDefinitions()
+            false -> return  definitionRepository.howManyDefinitionsInDomain(domain)
         }
     }
-    @Autowired
-    private lateinit var dictionaryService: DictionaryService
+
     @CrossOrigin
     @GetMapping("/definitions/dict")
     fun getDefinitionDictCorrection(request: HttpServletRequest, @RequestParam query: String, @RequestParam(required = false, defaultValue = "")  domains: Array<String>): String {
         return dictionaryService.getDictionaryCorrection(query,domains)
     }
+
+
+    //Post requests
+
+
+    //Add synonym
+    @CrossOrigin
+    @PostMapping("/definitions/synonyms")
+    fun postSynonym(request: HttpServletRequest, synonyms:Array<String>) {
+
+    }
+
 }
