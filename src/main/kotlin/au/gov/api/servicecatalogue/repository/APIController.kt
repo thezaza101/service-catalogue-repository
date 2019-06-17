@@ -21,7 +21,7 @@ import au.gov.api.servicecatalogue.Diff.HTMLDiffOutputGenerator
 import au.gov.api.servicecatalogue.Diff.MyersDiff
 import au.gov.api.servicecatalogue.Diff.TextDiff
 import au.gov.api.servicecatalogue.repository.definitions.*
-
+data class Event(var key:String = "", var action:String = "", var type:String = "", var name:String = "", var reason:String = "", var content:String = "")
 @RestController
 class APIController {
 
@@ -70,7 +70,7 @@ class APIController {
         return true
     }
 
-    data class Event(var key:String = "", var action:String = "", var type:String = "", var name:String = "", var reason:String = "", var content:String = "")
+
 
     private fun logEvent(request:HttpServletRequest, action:String, type:String, name:String, reason:String,content:String = "") {
         Thread(Runnable {

@@ -120,13 +120,11 @@ class DefinitionRepository {
         dataSource = theDataSource
     }
 
-    private fun capPageSize(size:Int):Int{
-        if(size < 100) return size
-        return 100
-    }
+    private fun capPageSize(size:Int):Int = when(size < 100) {true -> size false -> 100}
+
+    fun getDefinitionById(id:String): Definition = id2definitions[id]!!
 
     fun getDomainByAcronym(acronym:String): Domain? = domains[acronym]
-
 
     fun getDomainByName(name:String): Domain? = domains.values.filter { it.name == name }.firstOrNull()
 

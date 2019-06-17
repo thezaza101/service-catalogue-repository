@@ -41,26 +41,13 @@ class SyntaxRepository {
     fun initialise() {
         for ( syntax in getSyntax()){
             val identifier = syntax["identifier"] as String
-            val syntaxes = syntax["syntax"] as LinkedHashMap<String,*>
-            val syntaxesMap = mutableMapOf<String, Map<String, String>>()
-            if(syntaxes != null){
-                for((syntaxName, syntaxMap) in syntaxes.iterator()){
-                    val syntaxOptions = mutableMapOf<String,String>()
-                    if(syntaxMap != null && syntaxMap is MutableMap<*, *>){
-                        for((syntaxProperty, syntaxValue) in syntaxMap.iterator()){
-                            if(syntaxProperty is String && syntaxValue is String) {
-                                syntaxOptions[syntaxProperty] = syntaxValue
-                            }
-                        }
-                    }
-                    syntaxesMap[syntaxName] = syntaxOptions
-                }
-            }
+            val syntaxes = syntax["syntax"] as Map<String,Map<String, String>>
 
-            val newSyntax = Syntax(identifier, syntaxesMap)
+            val newSyntax = Syntax(identifier, syntaxes)
             syntaxData[identifier] = newSyntax
         }
     }
+
 
     private fun getSyntax() : List<LinkedHashMap<String,*>> {
         var connection: Connection? = null
@@ -86,6 +73,28 @@ class SyntaxRepository {
         }
     }
 
+    fun saveSyntax(id:String, syntaxs: Map<String,Map<String,Map<String, String>>>){
+        data class SyntaxStruct(var identifier: String, var syntax: Map<String,Map<String, String>>)
+        var syntaxToSave = SyntaxStruct(id,syntaxs[syntaxs.keys.first()]!!)
+        val json = ObjectMapper().writeValueAsString(syntaxToSave)
+
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+            val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS syntaxes (syntax JSONB)")
+            val upsert = connection.prepareStatement("INSERT INTO syntaxes(ident,syntax) VALUES(?, ?::jsonb) ON CONFLICT(ident) DO UPDATE SET syntax = EXCLUDED.syntax")
+            upsert.setString(1, id)
+            upsert.setString(2, json)
+            upsert.executeUpdate()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+
+    }
     fun findOne(id: String): Syntax? = syntaxData[id]
 
 

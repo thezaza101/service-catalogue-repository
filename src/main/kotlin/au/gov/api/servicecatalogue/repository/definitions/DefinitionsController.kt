@@ -1,7 +1,19 @@
 package au.gov.api.servicecatalogue.repository.definitions
 
+import au.gov.api.config.Config
+import au.gov.api.servicecatalogue.repository.APIController
+import au.gov.api.servicecatalogue.repository.Event
+import com.beust.klaxon.JsonObject
+import com.beust.klaxon.Klaxon
+import com.beust.klaxon.Parser
+import khttp.get
+import khttp.structures.authorization.BasicAuthorization
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.core.env.Environment
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
+import java.lang.Exception
+import java.util.*
 import javax.servlet.http.HttpServletRequest
 
 @RestController
@@ -17,6 +29,50 @@ class DefinitionsController {
 
     @Autowired
     private lateinit var dictionaryService: DictionaryService
+
+    @Autowired
+    private lateinit var environment: Environment
+
+    private fun isAuthorisedToSaveDefinition(request:HttpServletRequest, space:String):Boolean{
+        if(environment.getActiveProfiles().contains("prod")){
+            val AuthURI = Config.get("AuthURI")
+
+            // http://www.baeldung.com/get-user-in-spring-security
+            val raw = request.getHeader("authorization")
+            if (raw==null) return false;
+            val apikey = String(Base64.getDecoder().decode(raw.removePrefix("Basic ")))
+
+            val user = apikey.split(":")[0]
+            val pass= apikey.split(":")[1]
+
+
+            val authorisationRequest = get(AuthURI + "api/canWrite",
+                    params=mapOf("space" to space),
+                    auth= BasicAuthorization(user, pass)
+            )
+            if(authorisationRequest.statusCode != 200) return false
+            return authorisationRequest.text == "true"
+        }
+        return true
+    }
+
+    private fun logEvent(request:HttpServletRequest, action:String, type:String, name:String, reason:String,content:String = "") {
+        Thread(Runnable {
+            print("Logging Event...")
+            // http://www.baeldung.com/get-user-in-spring-security
+            val raw = request.getHeader("authorization")
+            val logURL = Config.get("LogURI")+"new"
+            if (raw==null) throw RuntimeException()
+            val user = String(Base64.getDecoder().decode(raw.removePrefix("Basic "))).split(":")[0]
+            val parser: Parser = Parser()
+            var eventPayload: JsonObject = parser.parse(StringBuilder(Klaxon().toJsonString(Event(user,action,type,name,reason,content)))) as JsonObject
+            val eventAuth = System.getenv("LogAuthKey")
+            val eventAuthUser = eventAuth.split(":")[0]
+            val eventAuthPass = eventAuth.split(":")[1]
+            var x = khttp.post(logURL,auth=BasicAuthorization(eventAuthUser, eventAuthPass),json = eventPayload)
+            println("Status:"+x.statusCode)
+        }).start()
+    }
 
     //Get requests
     @CrossOrigin
@@ -107,12 +163,44 @@ class DefinitionsController {
 
     //Post requests
 
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    class Unauthorised() : RuntimeException()
 
     //Add synonym
     @CrossOrigin
     @PostMapping("/definitions/synonyms")
-    fun postSynonym(request: HttpServletRequest, synonyms:Array<String>) {
+    fun postSynonym(request: HttpServletRequest, @RequestBody synonyms:Array<String>) {
 
     }
+
+
+    //Post syntax
+    @CrossOrigin
+    @PostMapping("/definitions/syntax")
+    fun postSyntax(request: HttpServletRequest,@RequestParam id: String,  @RequestBody syntaxs:Map<String,Map<String,Map<String, String>>>) {
+        try{
+            val definition = definitionRepository.getDefinitionById(id)
+        } catch (e:Exception) {throw Exception("Identifier does not exist", e)}
+        syntaxRepository.saveSyntax(id,syntaxs)
+
+
+    }
+
+    //Post relationship
+    @CrossOrigin
+    @PostMapping("/definitions/relationships")
+    fun postRelationship(request: HttpServletRequest, @RequestBody relationship: RelationshipRepository.NewRelationship) {
+        if ((relationship.type =="").or(relationship.content.first == "").or(relationship.content.second == "" )) throw Exception("Required values are empty")
+        try{
+            val first = definitionRepository.getDefinitionById(relationship.content.first)
+            val second = definitionRepository.getDefinitionById(relationship.content.second)
+        } catch (e:Exception) {throw Exception("Identifier does not exist", e)}
+        if(isAuthorisedToSaveDefinition(request,"admin")) {
+            relationRepository.saveRelationship(relationship)
+            logEvent(request,"Created","Relationship",relationship.content.first,relationship.content.second)
+        } else { throw Unauthorised() }
+    }
+
+
 
 }
