@@ -6,6 +6,7 @@ import au.gov.api.servicecatalogue.repository.Event
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Klaxon
 import com.beust.klaxon.Parser
+import com.fasterxml.jackson.databind.ObjectMapper
 import khttp.get
 import khttp.structures.authorization.BasicAuthorization
 import org.springframework.beans.factory.annotation.Autowired
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*
 import java.lang.Exception
 import java.util.*
 import javax.servlet.http.HttpServletRequest
+import javax.validation.constraints.Null
 
 @RestController
 class DefinitionsController {
@@ -98,6 +100,11 @@ class DefinitionsController {
     fun getSynonym(request: HttpServletRequest): MutableList<List<String>> {
         return  synonymRepository.origSynonyms
     }
+    @CrossOrigin
+    @GetMapping("/definitions/synonyms/{word}")
+    fun getSynonymByText(request: HttpServletRequest, @RequestParam word: String): List<String>? {
+        return  synonymRepository.getSynonym(word)
+    }
 
     @CrossOrigin
     @GetMapping("/definitions/synonyms/expand")
@@ -169,8 +176,33 @@ class DefinitionsController {
     //Add synonym
     @CrossOrigin
     @PostMapping("/definitions/synonyms")
-    fun postSynonym(request: HttpServletRequest, @RequestBody synonyms:Array<String>) {
+    fun postSynonym(request: HttpServletRequest, @RequestParam replace: Boolean, @RequestParam(required = false, defaultValue="false") remove:Boolean, @RequestBody synonyms:List<String>) {
+        if(isAuthorisedToSaveDefinition(request,"admin")) {
+            val (validated,existing) = synonymRepository.validateNewSynonym(synonyms)
+            if(!remove) {
+                if (!validated) throw Exception("List cannot be validated")
+                if(existing!=null) {
+                    if (replace) {
+                        synonymRepository.replaceSynonyms(existing!!,synonyms)
+                        logEvent(request, "Updated", "Synonym", ObjectMapper().writeValueAsString(existing!!),"replace", ObjectMapper().writeValueAsString(synonyms))
+                    } else {
+                        val newList = synonyms.toMutableList()
+                        newList.addAll(existing!!)
+                        synonymRepository.replaceSynonyms(existing!!,newList.distinct())
+                        logEvent(request, "Updated", "Synonym", ObjectMapper().writeValueAsString(existing!!), "add" ,ObjectMapper().writeValueAsString(newList.distinct()))
+                    }
+                } else {
+                    synonymRepository.saveSynonym(synonyms)
+                    logEvent(request, "Updated", "Synonym", ObjectMapper().writeValueAsString(synonyms), "new")
+                }
+            } else {
+                if(existing!=null) {
+                    synonymRepository.removeSynonyms(synonyms)
+                    logEvent(request, "Deleted", "Synonym", ObjectMapper().writeValueAsString(synonyms), "Delete")
+                }
 
+            }
+        }else { throw Unauthorised() }
     }
 
 
@@ -178,10 +210,15 @@ class DefinitionsController {
     @CrossOrigin
     @PostMapping("/definitions/syntax")
     fun postSyntax(request: HttpServletRequest,@RequestParam id: String,  @RequestBody syntaxs:Map<String,Map<String,Map<String, String>>>) {
-        try{
-            val definition = definitionRepository.getDefinitionById(id)
-        } catch (e:Exception) {throw Exception("Identifier does not exist", e)}
-        syntaxRepository.saveSyntax(id,syntaxs)
+        if(isAuthorisedToSaveDefinition(request,"admin")) {
+            try {
+                val definition = definitionRepository.getDefinitionById(id)
+            } catch (e: Exception) {
+                throw Exception("Identifier does not exist", e)
+            }
+            syntaxRepository.saveSyntax(id, syntaxs)
+            logEvent(request, "Updated", "Syntax", id, ObjectMapper().writeValueAsString(syntaxs))
+        } else { throw Unauthorised() }
 
 
     }
@@ -191,16 +228,14 @@ class DefinitionsController {
     @PostMapping("/definitions/relationships")
     fun postRelationship(request: HttpServletRequest, @RequestBody relationship: RelationshipRepository.NewRelationship) {
         if ((relationship.type =="").or(relationship.content.first == "").or(relationship.content.second == "" )) throw Exception("Required values are empty")
+        if(isAuthorisedToSaveDefinition(request,"admin")) {
         try{
             val first = definitionRepository.getDefinitionById(relationship.content.first)
             val second = definitionRepository.getDefinitionById(relationship.content.second)
         } catch (e:Exception) {throw Exception("Identifier does not exist", e)}
-        if(isAuthorisedToSaveDefinition(request,"admin")) {
+
             relationRepository.saveRelationship(relationship)
             logEvent(request,"Created","Relationship",relationship.content.first,relationship.content.second)
         } else { throw Unauthorised() }
     }
-
-
-
 }

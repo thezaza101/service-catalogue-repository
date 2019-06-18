@@ -42,10 +42,14 @@ class SyntaxRepository {
         for ( syntax in getSyntax()){
             val identifier = syntax["identifier"] as String
             val syntaxes = syntax["syntax"] as Map<String,Map<String, String>>
-
-            val newSyntax = Syntax(identifier, syntaxes)
-            syntaxData[identifier] = newSyntax
+            addSuntaxToRepo(identifier,syntaxes)
         }
+    }
+
+
+    private fun addSuntaxToRepo(ident:String, syntaxs: Map<String,Map<String, String>>){
+        val newSyntax = Syntax(ident, syntaxs)
+        syntaxData[ident] = newSyntax
     }
 
 
@@ -87,14 +91,16 @@ class SyntaxRepository {
             upsert.setString(1, id)
             upsert.setString(2, json)
             upsert.executeUpdate()
+            addSuntaxToRepo(id,syntaxs[syntaxs.keys.first()]!!)
         } catch (e: Exception) {
             e.printStackTrace()
             throw RepositoryException()
         } finally {
             if (connection != null) connection.close()
         }
-
     }
+
+
     fun findOne(id: String): Syntax? = syntaxData[id]
 
 
