@@ -98,6 +98,7 @@ class SynonymRepository {
 
     fun validateNewSynonym(input:List<String>):Pair<Boolean, List<String>?> {
         var originalSyns:HashMap<List<String>?,Int> = hashMapOf()
+        if (input.count() < 2) return Pair(false,null)
         for (word in input) {
             val foundVal = getSynonym(word)
             originalSyns[foundVal] = if (originalSyns.containsKey(foundVal)) originalSyns[foundVal]!! + 1 else 1
