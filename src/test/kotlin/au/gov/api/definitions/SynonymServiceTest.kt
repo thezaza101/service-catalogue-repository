@@ -69,6 +69,21 @@ class SynonymServiceTest {
         val expansionResults = repository.expand(input)
         Assert.assertEquals(expected, expansionResults.expandedQuery)
         Assert.assertEquals(mapOf<String,List<String>>(), expansionResults.usedSynonyms)
+    }
+    @Test
+    fun Test_new_synonyms_valdidation() {
+        val (resultPositive, pl) = repository.validateNewSynonym(listOf("cats","dogs"))
+        val (resultPositive1,pl1) = repository.validateNewSynonym(listOf("bank","debt"))
+        val (resultNegitive, nl) = repository.validateNewSynonym(listOf("abn","debt"))
+
+        Assert.assertEquals(true,resultPositive)
+        Assert.assertEquals(true,resultPositive1)
+        Assert.assertEquals(false,resultNegitive)
+
+        Assert.assertEquals(null,pl)
+        Assert.assertEquals(true, pl1!!.contains("cost"))
+        Assert.assertEquals(null,nl)
+
 
     }
 

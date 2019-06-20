@@ -12,6 +12,8 @@ import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.annotation.Bean
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
+import java.lang.IndexOutOfBoundsException
+import java.lang.StringBuilder
 import java.sql.Connection
 import java.sql.SQLException
 import javax.sql.DataSource
@@ -72,9 +74,14 @@ class RelationshipRepository {
     private fun addJson() {
         for (relationship in getRelationships()) {
             val type = relationship.type
-            for (relations in relationship.content) {
-                val from = relations[0]
-                val to = relations[1]
+            try {
+                val from = relationship.content[0]
+                val to = relationship.content[1]
+                addResult(from, type, to, Direction.TO)
+                addResult(to, type, from, Direction.FROM)
+            } catch (e:IndexOutOfBoundsException) {
+                val from = ""
+                val to = ""
                 addResult(from, type, to, Direction.TO)
                 addResult(to, type, from, Direction.FROM)
             }
@@ -83,8 +90,11 @@ class RelationshipRepository {
 
     class Relations {
         var type:String = ""
-        var content:MutableList<MutableList<String>> = mutableListOf()
-        constructor (){}
+        var content:MutableList<String> = mutableListOf()
+        constructor (itype:String,icontent:MutableList<String>){
+            type = itype
+            content = icontent
+        }
     }
     private fun getRelationships() : MutableList<Relations> {
         var connection: Connection? = null
@@ -92,11 +102,12 @@ class RelationshipRepository {
             connection = dataSource.connection
 
             val stmt = connection.createStatement()
-            val rs = stmt.executeQuery("SELECT relationship FROM definitions_relationships")
+            val rs = stmt.executeQuery("SELECT * FROM definitions_relationships")
             val rv: MutableList<Relations> = mutableListOf()
-            val om = ObjectMapper()
             while (rs.next()) {
-                rv.add(om.readValue(rs.getString("relationship"), Relations::class.java))
+                val relType = rs.getString("reltype")
+                val content = readJsonArrayToStringList(rs.getString("relationship"))
+                rv.add(Relations(relType,content))
             }
             return rv
 
@@ -108,10 +119,22 @@ class RelationshipRepository {
         }
     }
 
+    private fun readJsonArrayToStringList(input:String) : MutableList<String> {
+        val raw = input.substring(1,input.length-1).trim()
+        var output:MutableList<String> = mutableListOf()
+        if (raw.length < 1) return output
+        val rawArray = raw.split(',')
+        for (s in rawArray) {
+            output.add(s.replace('"',' ').trim())
+        }
+        return output
+    }
+
     private fun addMetas() {
         if (metas.isEmpty()) {
             @Suppress("UNCHECKED_CAST")
-            for (jsonRelationship in JsonHelper.parse("/relationships/meta.json") as JsonArray<JsonObject>) {
+            for (jsonString in getMetaJsonFromDB()) {
+                var jsonRelationship = Parser().parse(StringBuilder(jsonString)) as JsonObject
                 val type = jsonRelationship.string("type") ?: ""
                 val directed = jsonRelationship.boolean("directed") ?: false
                 val to = jsonRelationship.string("to") ?: ""
@@ -120,6 +143,27 @@ class RelationshipRepository {
                 val meta = Meta(type, directed, verbMap)
                 metas[type] = meta
             }
+        }
+    }
+
+    private fun getMetaJsonFromDB() : List<String> {
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+
+            val stmt = connection.createStatement()
+            val rs = stmt.executeQuery("SELECT meta FROM definitions_relation_meta")
+            val rv: MutableList<String> = mutableListOf()
+            while (rs.next()) {
+                rv.add(rs.getString("meta"))
+            }
+            return rv.toList()
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
         }
     }
 
@@ -144,14 +188,15 @@ class RelationshipRepository {
 
     fun saveRelationship(relation:NewRelationship)
     {
-        var stringToSave = getDBString(relation)
         var connection: Connection? = null
         try {
             connection = dataSource.connection
             val stmt = connection.createStatement()
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS synonyms (synonym JSONB)")
-            val upsert = connection.prepareStatement("INSERT INTO synonyms(synonym) VALUES(?::jsonb)")
-            upsert.setString(1, stringToSave)
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS definitions_relationships (acronym VARCHAR(5),relType VARCHAR(50), relationship JSONB)")
+            val upsert = connection.prepareStatement("INSERT INTO definitions_relationships(acronym, relType, relationship) VALUES(?,?,?::jsonb)")
+            upsert.setString(1, "")
+            upsert.setString(2, relation.type)
+            upsert.setString(3, getDBString(relation))
             upsert.executeUpdate()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -165,7 +210,7 @@ class RelationshipRepository {
     }
 
     fun getDBString(rel:NewRelationship) : String {
-        var output = "{\"type\":\"${rel.type}\",\"content\":[[\"${rel.content.first}\",\"${rel.content.second}\"]]}"
+        var output = "[\"${rel.content.first}\",\"${rel.content.second}\"]"
         return output
     }
 

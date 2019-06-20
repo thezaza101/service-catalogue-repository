@@ -15,9 +15,7 @@ import org.apache.lucene.document.Document
 import org.apache.lucene.document.Field
 import org.apache.lucene.document.StoredField
 import org.apache.lucene.document.TextField
-import org.apache.lucene.index.DirectoryReader
-import org.apache.lucene.index.IndexWriter
-import org.apache.lucene.index.IndexWriterConfig
+import org.apache.lucene.index.*
 import org.apache.lucene.queryparser.classic.QueryParser
 import org.apache.lucene.search.IndexSearcher
 import org.apache.lucene.store.RAMDirectory
@@ -30,6 +28,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.ResponseStatus
 import java.sql.Connection
+import java.sql.Date
 import java.sql.SQLException
 import javax.sql.DataSource
 import kotlin.collections.List
@@ -59,6 +58,20 @@ class Domain(val name:String, @JsonIgnore val _acronym: String, val version:Stri
 class Definition {
 
     constructor(){}
+    constructor(def: NewDefinition){
+        name = def.name
+        domain = def.domain
+        status = def.status
+        definition = def.definition
+        guidance = def.guidance
+        identifier = def.identifier
+        usage = def.usage
+        type = def.datatype.type
+        values = def.values
+        facets = def.datatype.facets
+        domainAcronym = def.domainAcronym
+        sourceURL = def.sourceURL
+    }
     constructor(iname: String, idomain: String, istatus: String, idefinition:  String, iguidance: String,
                 iidentifier: String, iusage: Array<String>, itype: String, ivalues: Array<String>,
                 ifacets: Map<String, String>, idomainAcronym: String, isourceURL:String = ""){
@@ -88,6 +101,21 @@ class Definition {
     var domainAcronym: String = ""
     var sourceURL:String = ""
 }
+data class DataType(var type:String="",var facets: Map<String, String> = mapOf())
+data class NewDefinition (
+        var name: String = "",
+        var domain: String = "",
+        var status: String = "",
+        var definition:  String = "",
+        var guidance: String = "",
+        var identifier: String = "",
+        var usage: Array<String> = arrayOf(),
+        var values: Array<String> = arrayOf(),
+        var datatype: DataType = DataType("", mapOf()),
+        var domainAcronym: String = "",
+        var sourceURL:String = "",
+        var version: String = ""
+)
 @Component
 class DefinitionRepository {
 
@@ -120,18 +148,17 @@ class DefinitionRepository {
         dataSource = theDataSource
     }
 
-    private fun capPageSize(size:Int):Int{
-        if(size < 100) return size
-        return 100
-    }
+    private fun capPageSize(size:Int):Int = when(size < 100) {true -> size false -> 100}
+
+    fun getDefinitionById(id:String): Definition = id2definitions[id]!!
 
     fun getDomainByAcronym(acronym:String): Domain? = domains[acronym]
-
 
     fun getDomainByName(name:String): Domain? = domains.values.filter { it.name == name }.firstOrNull()
 
 
     fun getDomains():List<Domain> = domains.values.toList()
+    fun domainExists(acronym: String):Boolean = domains.containsKey(acronym)
 
     @EventListener(ApplicationReadyEvent::class)
     fun initialise() {
@@ -205,6 +232,9 @@ class DefinitionRepository {
         }
     }
 
+    fun addDomainToMemory(domain: Domain){
+        domains[domain.acronym] = domain
+    }
     private fun addDefinitionToIndexes(newDefinition: Definition, domainAcronym: String?) {
         definitions.add(newDefinition)
         id2definitions[newDefinition.identifier] = newDefinition
@@ -327,6 +357,55 @@ class DefinitionRepository {
         return definitions.filter { it.identifier.matches(""".*/$domain/.*""".toRegex()) }.toMutableList()
     }
 
+    fun saveDefinition(input:NewDefinition) {
+        var stringToSave = ObjectMapper().writeValueAsString(input)
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+            val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS definitions (acronym VARCHAR(5), defdomain VARCHAR(100), version VARCHAR(100),sourceURL VARCHAR(2000),ident VARCHAR(200),definition JSON)")
+            var upsert = connection.prepareStatement("INSERT INTO definitions(acronym, defdomain, version, sourceURL,ident, definition) VALUES(?, ?, ?, ?, ?, ?::jsonb)")
+            //val upsert = connection.prepareStatement("INSERT INTO synonyms(synonym) VALUES(?::jsonb)")
+            upsert.setString(1, input.domainAcronym)
+            upsert.setString(2, input.domain)
+            upsert.setString(3,input.version)
+            upsert.setString(4, input.sourceURL)
+            upsert.setString(5, input.identifier)
+            upsert.setString(6, stringToSave)
+            //upsert = connection.prepareStatement(upsert.toString())
+            upsert.executeUpdate()
+            addDefinitionToIndexes(Definition(input),input.domainAcronym)
+            indexWriter.commit()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+    }
+
+    fun removeDefinitions(ident: String){
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+
+            val q = connection.prepareStatement("DELETE FROM definitions WHERE ident = ?")
+            q.setString(1, ident)
+            q.executeUpdate()
+            deleteByTerm("identifier", ident.split("/").last())
+            indexWriter.commit()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+
+    }
+    fun deleteByTerm(field:String, termText: String){
+        var term = Term(field,termText)
+        indexWriter.deleteDocuments(term)
+    }
 
     fun findAll(pageNumber: Int, pageSize: Int): List<Definition> {
         var offset = (pageNumber-1) * capPageSize(pageSize)

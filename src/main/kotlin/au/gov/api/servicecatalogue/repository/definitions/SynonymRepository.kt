@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component
 import java.sql.Array
 import java.sql.Connection
 import java.sql.SQLException
+import java.util.HashSet
 import javax.sql.DataSource
 
 data class SynonymExpansionResults(val expandedQuery: String, val usedSynonyms: Map<String, List<String>>)
@@ -34,13 +35,11 @@ class SynonymRepository {
 
     private var synonyms : MutableMap<String, List<String>> = mutableMapOf()
 
-
     constructor(){}
 
     constructor(theDataSource: DataSource){
         dataSource = theDataSource
     }
-
 
     @EventListener(ApplicationReadyEvent::class)
     fun initialise() {
@@ -79,7 +78,6 @@ class SynonymRepository {
         } finally {
             if (connection != null) connection.close()
         }
-
         //The Synonym needs to be added to the in-memory list as SQL updates do not reflect until the app is restarted
         addSynonymToMemoryDB(stringToSave)
     }
@@ -98,15 +96,58 @@ class SynonymRepository {
         }
     }
 
+    fun validateNewSynonym(input:List<String>):Pair<Boolean, List<String>?> {
+        var originalSyns:HashMap<List<String>?,Int> = hashMapOf()
+        if (input.count() < 2) return Pair(false,null)
+        for (word in input) {
+            val foundVal = getSynonym(word)
+            originalSyns[foundVal] = if (originalSyns.containsKey(foundVal)) originalSyns[foundVal]!! + 1 else 1
+        }
+        val filterdSyns = originalSyns.keys.filterNotNull()
+        if (filterdSyns.count() > 1) return Pair(false,null) else return Pair(true,filterdSyns.firstOrNull())
+    }
+
     private fun getDBString(input:List<String>):String {
         var output = "[\""
         for (s in input) {
-            output += "$s\",\""
+            output += "$s\", \""
         }
-        output = output.substring(0,output.length-2) + "]"
+        output = output.substring(0,output.length-3) + "]"
         return output
     }
 
+    fun removeSynonyms(input: List<String>){
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
+            val dbEntry = getDBString(input)
+
+            val q = connection.prepareStatement("DELETE FROM synonyms WHERE synonym::text = ?")
+            q.setString(1, dbEntry)
+            q.executeUpdate()
+
+            origSynonyms.remove(input)
+
+            for (word in input) {
+                synonyms.remove(word)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
+        }
+
+    }
+
+    fun replaceSynonyms(inputOriginal: List<String>, inputNew: List<String>){
+        removeSynonyms(inputOriginal)
+        saveSynonym(inputNew)
+    }
+    fun getSynonym(word:String) : List<String>? {
+        if (synonyms.contains(word)) return synonyms[word]
+        return null
+    }
     private fun getSynonyms() : List<List<String>> {
         var connection: Connection? = null
         try {
@@ -133,7 +174,7 @@ class SynonymRepository {
         var split = input.replace("\"","").replace("[","").replace("]","").split(',')
         var synonyms = mutableListOf<String>()
         for (word in split) {
-            synonyms.add(word)
+            synonyms.add(word.trim())
         }
         return synonyms
     }

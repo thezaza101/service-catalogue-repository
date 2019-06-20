@@ -21,7 +21,7 @@ import au.gov.api.servicecatalogue.Diff.HTMLDiffOutputGenerator
 import au.gov.api.servicecatalogue.Diff.MyersDiff
 import au.gov.api.servicecatalogue.Diff.TextDiff
 import au.gov.api.servicecatalogue.repository.definitions.*
-
+data class Event(var key:String = "", var action:String = "", var type:String = "", var name:String = "", var reason:String = "", var content:String = "")
 @RestController
 class APIController {
 
@@ -70,9 +70,9 @@ class APIController {
         return true
     }
 
-    data class Event(var key:String = "", var action:String = "", var type:String = "", var name:String = "", var reason:String = "")
 
-    private fun logEvent(request:HttpServletRequest, action:String, type:String, name:String, reason:String) {
+
+    private fun logEvent(request:HttpServletRequest, action:String, type:String, name:String, reason:String,content:String = "") {
         Thread(Runnable {
             print("Logging Event...")
             // http://www.baeldung.com/get-user-in-spring-security
@@ -81,7 +81,7 @@ class APIController {
             if (raw==null) throw RuntimeException()
             val user = String(Base64.getDecoder().decode(raw.removePrefix("Basic "))).split(":")[0]
             val parser:Parser = Parser()
-            var eventPayload:JsonObject = parser.parse(StringBuilder(Klaxon().toJsonString(Event(user,action,type,name,reason)))) as JsonObject
+            var eventPayload:JsonObject = parser.parse(StringBuilder(Klaxon().toJsonString(Event(user,action,type,name,reason,content)))) as JsonObject
             val eventAuth = System.getenv("LogAuthKey")
             val eventAuthUser = eventAuth.split(":")[0]
             val eventAuthPass = eventAuth.split(":")[1]
