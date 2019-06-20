@@ -260,8 +260,10 @@ class DefinitionsController {
                 //New definition
                 if (domainExists) {
                     addDefinitionToExistingDomain(definition)
+                    logEvent(request,"Created","Definition",id,"new",ObjectMapper().writeValueAsString(definition))
                 } else {
-                    addDomainToMemory(definition)
+                    throw Exception("Cannot create new domain, contact sbr_tdt@sbr.gov.au")
+
                 }
             } else {
                 if(Definition(definition) == exists) throw Exception("Definition already exists")
@@ -269,10 +271,9 @@ class DefinitionsController {
                 if (domainExists) {
                     definitionRepository.removeDefinitions(exists.identifier)
                     addDefinitionToExistingDomain(definition)
+                    logEvent(request,"Updated","Definition",id,"new",ObjectMapper().writeValueAsString(exists))
                 } else {
-                    addDomainToMemory(definition)
-                    definitionRepository.removeDefinitions(exists.identifier)
-                    addDefinitionToExistingDomain(definition)
+                    throw Exception("Cannot create new domain, contact sbr_tdt@sbr.gov.au")
                 }
             }
         }
