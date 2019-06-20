@@ -225,7 +225,7 @@ class DefinitionsController {
     @CrossOrigin
     @PostMapping("/definitions/relationships")
     fun postRelationship(request: HttpServletRequest, @RequestBody relationship: RelationshipRepository.NewRelationship) {
-        if(isAuthorisedToSaveDefinition(request,"admin")) {
+        if(isAuthorisedToSaveDefinition(request,getSpaceFromId(relationship.content.first)).and(isAuthorisedToSaveDefinition(request,getSpaceFromId(relationship.content.second)))) {
             if ((relationship.type =="").or(relationship.content.first == "").or(relationship.content.second == "" )) throw Exception("Required values are empty")
             try{
                 val first = definitionRepository.getDefinitionById(relationship.content.first)
@@ -239,11 +239,14 @@ class DefinitionsController {
 
 
 
+    private fun getSpaceFromId(id:String):String {
+        return "#"+id.replace("http://api.gov.au/definition/","").split("/").first()
+    }
 
     @CrossOrigin
     @PostMapping("/definitions/definition")
     fun postDefinition(request: HttpServletRequest, @RequestParam id: String, @RequestBody definition: NewDefinition , @RequestParam(required = false, defaultValue="true") domainExists:Boolean) {
-        if(isAuthorisedToSaveDefinition(request,"admin")) {
+        if(isAuthorisedToSaveDefinition(request,getSpaceFromId(id))) {
             var exists: Definition? = null
             if (id != definition.identifier) throw Exception("Supplied identifiers must match, if you wish to change the identifier contact sbr_tdt@sbr.gov.au")
             try {
