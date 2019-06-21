@@ -1,32 +1,29 @@
-
 package au.gov.api.servicecatalogue.repository
 
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 import kotlin.collections.Iterable
 import org.springframework.stereotype.Service
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.annotation.Bean
 import javax.sql.DataSource
 import java.sql.Connection
-import java.sql.SQLException
 import java.util.UUID
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.sun.org.apache.xpath.internal.operations.Bool
-
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.event.EventListener
 import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.annotation.Bean
 import org.springframework.scheduling.annotation.Scheduled
-
+import java.sql.SQLException
 
 @Service
 class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
+
     @Value("\${spring.datasource.url}")
-    private var dbUrl: String? = null
+    var dbUrl: String? = null
 
     @Autowired
-    private lateinit var dataSource: DataSource
+    lateinit var dataSource: DataSource
 
     @EventListener(ApplicationReadyEvent::class)
     @Scheduled(fixedRate = 3600000)
@@ -35,27 +32,28 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
         val raw = GitHub.getTextOfFlie(url)
         val mdfm = SingleMarkdownWithFrontMatter(raw)
         val sd = mdfm.serviceDescription
-        try{
+        try {
             val existingSd = findByIngestion(url)
-            existingSd.revise(mdfm.name, mdfm.description, mdfm.pages,false)
+            existingSd.revise(mdfm.name, mdfm.description, mdfm.pages, false)
             existingSd.tags = sd.tags
             save(existingSd)
 
-        }catch(e:Exception){
+        } catch (e: Exception) {
 
             sd.metadata.ingestSource = url
             save(sd)
-                
         }
 
     }
 
-    constructor(){}
+    constructor() {}
 
-    constructor(theDataSource:DataSource){
-		dataSource = theDataSource
-	}
+    constructor(theDataSource: DataSource) {
+        dataSource = theDataSource
+    }
 
+
+    // database access functions
 
     private fun findByIngestion(uri: String): ServiceDescription {
         var connection: Connection? = null
@@ -78,7 +76,7 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
         }
     }
 
-    fun saveCache(cache_entry: WebRequestHandler.ResponseContentChacheEntry){
+    fun saveCache(cache_entry: WebRequestHandler.ResponseContentChacheEntry) {
         var connection: Connection? = null
         try {
             connection = dataSource.connection
@@ -119,20 +117,20 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
         }
     }
 
-    fun deleteCacheByURI(URI: String,ignorePrams:Boolean=true) {
+    fun deleteCacheByURI(URI: String, ignorePrams: Boolean = true) {
         var connection: Connection? = null
         try {
             connection = dataSource.connection
 
             var sql = "DELETE FROM web_cache WHERE id LIKE ?"
-            var likeOp="%"
+            var likeOp = "%"
             if (!ignorePrams) {
                 sql = "DELETE FROM web_cache WHERE id = ?"
                 likeOp = ""
             }
 
             val q = connection.prepareStatement(sql)
-            q.setString(1, URI+likeOp)
+            q.setString(1, URI + likeOp)
             var rs = q.execute()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -142,7 +140,7 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
         }
     }
 
-    override fun findById(id: String,returnPrivate:Boolean): ServiceDescription {
+    override fun findById(id: String, returnPrivate: Boolean): ServiceDescription {
         var connection: Connection? = null
         try {
             connection = dataSource.connection
@@ -154,8 +152,7 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
                 throw RepositoryException()
             }
             val sd = ObjectMapper().readValue(rs.getString("data"), ServiceDescription::class.java)
-            if (sd.metadata.visibility)
-            {
+            if (sd.metadata.visibility) {
                 return sd
             } else {
                 if (returnPrivate) return sd else throw RepositoryException()
@@ -225,7 +222,7 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
         }
     }
 
-    override fun findAll(returnPrivate:Boolean): Iterable<ServiceDescription> {
+    override fun findAll(returnPrivate: Boolean): Iterable<ServiceDescription> {
         var connection: Connection? = null
         try {
             connection = dataSource.connection
@@ -237,11 +234,10 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
             while (rs.next()) {
                 rv.add(om.readValue(rs.getString("data"), ServiceDescription::class.java))
             }
-            if (returnPrivate)
-            {
+            if (returnPrivate) {
                 return rv
             } else {
-                return rv.filter { s -> s.metadata.visibility == true}
+                return rv.filter { s -> s.metadata.visibility == true }
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -251,24 +247,21 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
         }
     }
 
-	@Bean
-	@Throws(SQLException::class)
-	fun dataSource(): DataSource? {
-		if (dbUrl?.isEmpty() ?: true) {
-			return HikariDataSource()
-		} else {
-			val config = HikariConfig()
-			config.jdbcUrl = dbUrl
-			try {
-				return HikariDataSource(config)
-			} catch (e: Exception) {
-				return null
-			}
-		}
-	}
-
-
-
+    @Bean
+    @Throws(SQLException::class)
+    fun dataSource(): DataSource? {
+        if (dbUrl?.isEmpty() ?: true) {
+            return HikariDataSource()
+        } else {
+            val config = HikariConfig()
+            config.jdbcUrl = dbUrl
+            try {
+                return HikariDataSource(config)
+            } catch (e: Exception) {
+                return null
+            }
+        }
+    }
 }
 
 

@@ -33,81 +33,82 @@ class DefinitionsController {
     @Autowired
     private lateinit var environment: Environment
 
-    private fun isAuthorisedToSaveDefinition(request:HttpServletRequest, space:String):Boolean{
-        if(environment.getActiveProfiles().contains("prod")){
+    private fun isAuthorisedToSaveDefinition(request: HttpServletRequest, space: String): Boolean {
+        if (environment.getActiveProfiles().contains("prod")) {
             val AuthURI = Config.get("AuthURI")
 
             // http://www.baeldung.com/get-user-in-spring-security
             val raw = request.getHeader("authorization")
-            if (raw==null) return false
+            if (raw == null) return false
             val apikey = String(Base64.getDecoder().decode(raw.removePrefix("Basic ")))
 
             val user = apikey.split(":")[0]
-            val pass= apikey.split(":")[1]
+            val pass = apikey.split(":")[1]
 
 
             val authorisationRequest = get(AuthURI + "api/canWrite",
-                    params=mapOf("space" to space),
-                    auth= BasicAuthorization(user, pass)
+                    params = mapOf("space" to space),
+                    auth = BasicAuthorization(user, pass)
             )
-            if(authorisationRequest.statusCode != 200) return false
+            if (authorisationRequest.statusCode != 200) return false
             return authorisationRequest.text == "true"
         }
         return true
     }
 
-    private fun logEvent(request:HttpServletRequest, action:String, type:String, name:String, reason:String,content:String = "") {
+    private fun logEvent(request: HttpServletRequest, action: String, type: String, name: String, reason: String, content: String = "") {
         Thread(Runnable {
             print("Logging Event...")
             // http://www.baeldung.com/get-user-in-spring-security
             val raw = request.getHeader("authorization")
-            val logURL = Config.get("LogURI")+"new"
-            if (raw==null) throw RuntimeException()
+            val logURL = Config.get("LogURI") + "new"
+            if (raw == null) throw RuntimeException()
             val user = String(Base64.getDecoder().decode(raw.removePrefix("Basic "))).split(":")[0]
             val parser: Parser = Parser()
-            var eventPayload: JsonObject = parser.parse(StringBuilder(Klaxon().toJsonString(Event(user,action,type,name,reason,content)))) as JsonObject
+            var eventPayload: JsonObject = parser.parse(StringBuilder(Klaxon().toJsonString(Event(user, action, type, name, reason, content)))) as JsonObject
             val eventAuth = System.getenv("LogAuthKey")
             val eventAuthUser = eventAuth.split(":")[0]
             val eventAuthPass = eventAuth.split(":")[1]
-            var x = khttp.post(logURL,auth=BasicAuthorization(eventAuthUser, eventAuthPass),json = eventPayload)
-            println("Status:"+x.statusCode)
+            var x = khttp.post(logURL, auth = BasicAuthorization(eventAuthUser, eventAuthPass), json = eventPayload)
+            println("Status:" + x.statusCode)
         }).start()
     }
 
     //Get requests
     @CrossOrigin
     @GetMapping("/definitions/relationships")
-    fun getRelationshipsForId(request: HttpServletRequest, @RequestParam id: String): Map<String,List<Result>> {
+    fun getRelationshipsForId(request: HttpServletRequest, @RequestParam id: String): Map<String, List<Result>> {
         return relationRepository.getRelationshipFor(id)
     }
 
     @CrossOrigin
     @GetMapping("/definitions/relationships/meta")
     fun getMetaForRelationshipType(request: HttpServletRequest, @RequestParam relationType: String): Meta {
-        return  relationRepository.getMeta(relationType)
+        return relationRepository.getMeta(relationType)
     }
 
     @CrossOrigin
     @GetMapping("/definitions/syntax")
     fun getSyntax(request: HttpServletRequest, @RequestParam id: String): Syntax {
-        return  syntaxRepository.findOne(id)!!
+        return syntaxRepository.findOne(id)!!
     }
 
     @CrossOrigin
     @GetMapping("/definitions/synonyms")
     fun getSynonym(request: HttpServletRequest): MutableList<List<String>> {
-        return  synonymRepository.origSynonyms
+        return synonymRepository.origSynonyms
     }
+
     @CrossOrigin
     @GetMapping("/definitions/synonyms/{word}")
     fun getSynonymByText(request: HttpServletRequest, @RequestParam word: String): List<String>? {
-        return  synonymRepository.getSynonym(word)
+        return synonymRepository.getSynonym(word)
     }
 
     @CrossOrigin
     @GetMapping("/definitions/synonyms/expand")
     fun getExpandedSynonym(request: HttpServletRequest, @RequestParam query: String): SynonymExpansionResults {
-        return  synonymRepository.expand(query)
+        return synonymRepository.expand(query)
     }
 
     @Autowired
@@ -116,35 +117,35 @@ class DefinitionsController {
     @CrossOrigin
     @GetMapping("/definitions")
     fun getDefinitions(request: HttpServletRequest, @RequestParam pageNumber: Int, @RequestParam pageSize: Int, @RequestParam(required = false, defaultValue = "") domain: String): List<Definition> {
-        when (domain=="") {
-            true -> return  definitionRepository.findAll(pageNumber, pageSize)
-            false -> return definitionRepository.findAllInDomain(pageNumber, pageSize,domain)
+        when (domain == "") {
+            true -> return definitionRepository.findAll(pageNumber, pageSize)
+            false -> return definitionRepository.findAllInDomain(pageNumber, pageSize, domain)
         }
     }
 
     @CrossOrigin
     @GetMapping("/definitions/search")
-    fun searchDefinitions(request: HttpServletRequest, @RequestParam query: String, @RequestParam(required = false, defaultValue = "")  domain: Array<String>, @RequestParam page: Int, @RequestParam size: Int, @RequestParam raw:Boolean, @RequestParam ignoreSynonym: Boolean): SearchResults {
+    fun searchDefinitions(request: HttpServletRequest, @RequestParam query: String, @RequestParam(required = false, defaultValue = "") domain: Array<String>, @RequestParam page: Int, @RequestParam size: Int, @RequestParam raw: Boolean, @RequestParam ignoreSynonym: Boolean): SearchResults {
         var dom = ""
-        domain.forEach { dom +=  "$it " }
+        domain.forEach { dom += "$it " }
         dom = dom.trim()
-        return definitionRepository.search(query,dom,page,size,raw,ignoreSynonym)
+        return definitionRepository.search(query, dom, page, size, raw, ignoreSynonym)
     }
 
     @CrossOrigin
     @GetMapping("/definitions/definition/detail")
     fun getDefinitionDetail(request: HttpServletRequest, @RequestParam id: String): Definition {
-        return  definitionRepository.findOne(id)
+        return definitionRepository.findOne(id)
     }
 
     @CrossOrigin
     @GetMapping("/definitions/domains")
     fun getDefinitionDomains(request: HttpServletRequest, @RequestParam(required = false, defaultValue = "") domain: String): List<Domain> {
-        if(domain=="") {
-            return  definitionRepository.getDomains()
+        if (domain == "") {
+            return definitionRepository.getDomains()
         } else {
-            val d = definitionRepository.getDomainByAcronym(domain) ?: Domain("","","")
-            var output:MutableList<Domain> = mutableListOf()
+            val d = definitionRepository.getDomainByAcronym(domain) ?: Domain("", "", "")
+            var output: MutableList<Domain> = mutableListOf()
             output.add(d)
             return output
         }
@@ -153,16 +154,16 @@ class DefinitionsController {
     @CrossOrigin
     @GetMapping("/definitions/definition/count")
     fun getDefinitionsCount(request: HttpServletRequest, @RequestParam(required = false, defaultValue = "") domain: String): Int {
-        when(domain=="") {
+        when (domain == "") {
             true -> return definitionRepository.howManyDefinitions()
-            false -> return  definitionRepository.howManyDefinitionsInDomain(domain)
+            false -> return definitionRepository.howManyDefinitionsInDomain(domain)
         }
     }
 
     @CrossOrigin
     @GetMapping("/definitions/dict")
-    fun getDefinitionDictCorrection(request: HttpServletRequest, @RequestParam query: String, @RequestParam(required = false, defaultValue = "")  domains: Array<String>): String {
-        return dictionaryService.getDictionaryCorrection(query,domains)
+    fun getDefinitionDictCorrection(request: HttpServletRequest, @RequestParam query: String, @RequestParam(required = false, defaultValue = "") domains: Array<String>): String {
+        return dictionaryService.getDictionaryCorrection(query, domains)
     }
 
 
@@ -174,41 +175,43 @@ class DefinitionsController {
     //Add synonym
     @CrossOrigin
     @PostMapping("/definitions/synonyms")
-    fun postSynonym(request: HttpServletRequest, @RequestParam replace: Boolean, @RequestParam(required = false, defaultValue="false") remove:Boolean, @RequestBody synonyms:List<String>) {
-        if(isAuthorisedToSaveDefinition(request,"admin")) {
-            val (validated,existing) = synonymRepository.validateNewSynonym(synonyms)
-            if(!remove) {
+    fun postSynonym(request: HttpServletRequest, @RequestParam replace: Boolean, @RequestParam(required = false, defaultValue = "false") remove: Boolean, @RequestBody synonyms: List<String>) {
+        if (isAuthorisedToSaveDefinition(request, "admin")) {
+            val (validated, existing) = synonymRepository.validateNewSynonym(synonyms)
+            if (!remove) {
                 if (!validated) throw Exception("List cannot be validated")
-                if(existing!=null) {
+                if (existing != null) {
                     if (replace) {
-                        synonymRepository.replaceSynonyms(existing!!,synonyms)
-                        logEvent(request, "Updated", "Synonym", ObjectMapper().writeValueAsString(existing!!),"Replace", ObjectMapper().writeValueAsString(synonyms))
+                        synonymRepository.replaceSynonyms(existing!!, synonyms)
+                        logEvent(request, "Updated", "Synonym", ObjectMapper().writeValueAsString(existing!!), "Replace", ObjectMapper().writeValueAsString(synonyms))
                     } else {
                         val newList = synonyms.toMutableList()
                         newList.addAll(existing!!)
-                        synonymRepository.replaceSynonyms(existing!!,newList.distinct())
-                        logEvent(request, "Updated", "Synonym", ObjectMapper().writeValueAsString(existing!!), "Add" ,ObjectMapper().writeValueAsString(newList.distinct()))
+                        synonymRepository.replaceSynonyms(existing!!, newList.distinct())
+                        logEvent(request, "Updated", "Synonym", ObjectMapper().writeValueAsString(existing!!), "Add", ObjectMapper().writeValueAsString(newList.distinct()))
                     }
                 } else {
                     synonymRepository.saveSynonym(synonyms)
                     logEvent(request, "Updated", "Synonym", ObjectMapper().writeValueAsString(synonyms), "New")
                 }
             } else {
-                if(existing!=null) {
+                if (existing != null) {
                     synonymRepository.removeSynonyms(synonyms)
                     logEvent(request, "Deleted", "Synonym", ObjectMapper().writeValueAsString(synonyms), "Delete")
                 }
 
             }
-        }else { throw Unauthorised() }
+        } else {
+            throw Unauthorised()
+        }
     }
 
 
     //Post syntax
     @CrossOrigin
     @PostMapping("/definitions/syntax")
-    fun postSyntax(request: HttpServletRequest,@RequestParam id: String,  @RequestBody syntaxs:Map<String,Map<String,Map<String, String>>>) {
-        if(isAuthorisedToSaveDefinition(request,"admin")) {
+    fun postSyntax(request: HttpServletRequest, @RequestParam id: String, @RequestBody syntaxs: Map<String, Map<String, Map<String, String>>>) {
+        if (isAuthorisedToSaveDefinition(request, "admin")) {
             try {
                 val definition = definitionRepository.getDefinitionById(id)
             } catch (e: Exception) {
@@ -216,7 +219,9 @@ class DefinitionsController {
             }
             syntaxRepository.saveSyntax(id, syntaxs)
             logEvent(request, "Updated", "Syntax", id, ObjectMapper().writeValueAsString(syntaxs))
-        } else { throw Unauthorised() }
+        } else {
+            throw Unauthorised()
+        }
 
 
     }
@@ -225,28 +230,31 @@ class DefinitionsController {
     @CrossOrigin
     @PostMapping("/definitions/relationships")
     fun postRelationship(request: HttpServletRequest, @RequestBody relationship: RelationshipRepository.NewRelationship) {
-        if(isAuthorisedToSaveDefinition(request,getSpaceFromId(relationship.content.first)).and(isAuthorisedToSaveDefinition(request,getSpaceFromId(relationship.content.second)))) {
-            if ((relationship.type =="").or(relationship.content.first == "").or(relationship.content.second == "" )) throw Exception("Required values are empty")
-            try{
+        if (isAuthorisedToSaveDefinition(request, getSpaceFromId(relationship.content.first)).and(isAuthorisedToSaveDefinition(request, getSpaceFromId(relationship.content.second)))) {
+            if ((relationship.type == "").or(relationship.content.first == "").or(relationship.content.second == "")) throw Exception("Required values are empty")
+            try {
                 val first = definitionRepository.getDefinitionById(relationship.content.first)
                 val second = definitionRepository.getDefinitionById(relationship.content.second)
-            } catch (e:Exception) {throw Exception("Identifier does not exist", e)}
+            } catch (e: Exception) {
+                throw Exception("Identifier does not exist", e)
+            }
 
             relationRepository.saveRelationship(relationship)
-            logEvent(request,"Created","Relationship",relationship.content.first,relationship.content.second)
-        } else { throw Unauthorised() }
+            logEvent(request, "Created", "Relationship", relationship.content.first, relationship.content.second)
+        } else {
+            throw Unauthorised()
+        }
     }
 
 
-
-    private fun getSpaceFromId(id:String):String {
-        return "#"+id.replace("http://api.gov.au/definition/","").split("/").first()
+    private fun getSpaceFromId(id: String): String {
+        return "#" + id.replace("http://api.gov.au/definition/", "").split("/").first()
     }
 
     @CrossOrigin
     @PostMapping("/definitions/definition")
-    fun postDefinition(request: HttpServletRequest, @RequestParam id: String, @RequestBody definition: NewDefinition , @RequestParam(required = false, defaultValue="true") domainExists:Boolean) {
-        if(isAuthorisedToSaveDefinition(request,getSpaceFromId(id))) {
+    fun postDefinition(request: HttpServletRequest, @RequestParam id: String, @RequestBody definition: NewDefinition, @RequestParam(required = false, defaultValue = "true") domainExists: Boolean) {
+        if (isAuthorisedToSaveDefinition(request, getSpaceFromId(id))) {
             var exists: Definition? = null
             if (id != definition.identifier) throw Exception("Supplied identifiers must match, if you wish to change the identifier contact sbr_tdt@sbr.gov.au")
             try {
@@ -260,31 +268,31 @@ class DefinitionsController {
                 //New definition
                 if (domainExists) {
                     addDefinitionToExistingDomain(definition)
-                    logEvent(request,"Created","Definition",id,"new",ObjectMapper().writeValueAsString(definition))
+                    logEvent(request, "Created", "Definition", id, "new", ObjectMapper().writeValueAsString(definition))
                 } else {
                     throw Exception("Cannot create new domain, contact sbr_tdt@sbr.gov.au")
 
                 }
             } else {
-                if(Definition(definition) == exists) throw Exception("Definition already exists")
+                if (Definition(definition) == exists) throw Exception("Definition already exists")
                 //Existing definition
                 if (domainExists) {
                     definitionRepository.removeDefinitions(exists.identifier)
                     addDefinitionToExistingDomain(definition)
-                    logEvent(request,"Updated","Definition",id,"new",ObjectMapper().writeValueAsString(exists))
+                    logEvent(request, "Updated", "Definition", id, "new", ObjectMapper().writeValueAsString(exists))
                 } else {
                     throw Exception("Cannot create new domain, contact sbr_tdt@sbr.gov.au")
                 }
             }
         }
     }
+
     private fun addDefinitionToExistingDomain(definition: NewDefinition) {
-        if(definitionRepository.domainExists(definition.domainAcronym)) {
+        if (definitionRepository.domainExists(definition.domainAcronym)) {
             val domain = definitionRepository.getDomainByAcronym(definition.domainAcronym)
-            if((domain!=null).and(domain!!.name == definition.domain)) {
+            if ((domain != null).and(domain!!.name == definition.domain)) {
                 definitionRepository.saveDefinition(definition)
-            } else
-            {
+            } else {
                 throw Exception("Please check your domain name spelling.  if this is intentional contact sbr_tdt@sbr.gov.au")
             }
 
@@ -292,9 +300,10 @@ class DefinitionsController {
             throw Exception("You are attempting to add an element to a new domain. if this is intentional override the 'domainExists' flag to false")
         }
     }
+
     private fun addDomainToMemory(definition: NewDefinition) {
-        if(definitionRepository.domainExists(definition.domainAcronym).or(definitionRepository.getDomains().any { it.name == definition.name })) throw Exception("Domain already exists")
-        if ((definition.domain.trim()=="").or(definition.domainAcronym.trim()=="")) throw Exception("Domain name and acronym must be supplied")
-        definitionRepository.addDomainToMemory(Domain(definition.domain,definition.domainAcronym,definition.version))
+        if (definitionRepository.domainExists(definition.domainAcronym).or(definitionRepository.getDomains().any { it.name == definition.name })) throw Exception("Domain already exists")
+        if ((definition.domain.trim() == "").or(definition.domainAcronym.trim() == "")) throw Exception("Domain name and acronym must be supplied")
+        definitionRepository.addDomainToMemory(Domain(definition.domain, definition.domainAcronym, definition.version))
     }
 }

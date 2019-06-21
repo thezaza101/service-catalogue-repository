@@ -70,8 +70,6 @@ class APIController {
         return true
     }
 
-
-
     private fun logEvent(request:HttpServletRequest, action:String, type:String, name:String, reason:String,content:String = "") {
         Thread(Runnable {
             print("Logging Event...")
@@ -89,7 +87,6 @@ class APIController {
             println("Status:"+x.statusCode)
         }).start()
     }
-
 
 	fun writableSpaces(request:HttpServletRequest):List<String>{
 
@@ -122,7 +119,6 @@ class APIController {
 
 
 	}
-
 
     @CrossOrigin
     @GetMapping("/new")
