@@ -16,12 +16,8 @@ import java.sql.SQLException
 import javax.sql.DataSource
 import kotlin.collections.Map
 import kotlin.collections.MutableMap
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.iterator
 import kotlin.collections.mutableMapOf
 import kotlin.collections.set
-
 
 data class Syntax(@JsonIgnore val identifier: String, val syntaxes: Map<String, Map<String, String>>)
 
@@ -29,43 +25,50 @@ data class Syntax(@JsonIgnore val identifier: String, val syntaxes: Map<String, 
 class SyntaxRepository {
 
     @Value("\${spring.datasource.url}")
-    private var dbUrl: String? = null
+    var dbUrl: String? = null
 
     @Autowired
-    private lateinit var dataSource: DataSource
+    lateinit var dataSource: DataSource
 
     private var syntaxData: MutableMap<String, Syntax> = mutableMapOf()
 
+    constructor() {}
+
+    constructor(theDataSource: DataSource) {
+        dataSource = theDataSource
+    }
 
     @EventListener(ApplicationReadyEvent::class)
     fun initialise() {
-        for ( syntax in getSyntax()){
+        for (syntax in getSyntax()) {
             val identifier = syntax["identifier"] as String
-            val syntaxes = syntax["syntax"] as Map<String,Map<String, String>>
-            addSuntaxToRepo(identifier,syntaxes)
+            val syntaxes = syntax["syntax"] as Map<String, Map<String, String>>
+            addSuntaxToRepo(identifier, syntaxes)
         }
     }
 
+    fun findOne(id: String): Syntax? = syntaxData[id]
 
-    private fun addSuntaxToRepo(ident:String, syntaxs: Map<String,Map<String, String>>){
+    private fun addSuntaxToRepo(ident: String, syntaxs: Map<String, Map<String, String>>) {
         val newSyntax = Syntax(ident, syntaxs)
         syntaxData[ident] = newSyntax
     }
 
+    // database access functions
 
-    private fun getSyntax() : List<LinkedHashMap<String,*>> {
+    private fun getSyntax(): List<LinkedHashMap<String, *>> {
         var connection: Connection? = null
         try {
             connection = dataSource.connection
 
             val stmt = connection.createStatement()
             val rs = stmt.executeQuery("SELECT syntax FROM syntaxes")
-            val rv: MutableList<LinkedHashMap<String,*>> = mutableListOf()
+            val rv: MutableList<LinkedHashMap<String, *>> = mutableListOf()
             val om = ObjectMapper()
             while (rs.next()) {
                 var value = rs.getString("syntax")
                 val syntax = om.readValue(value, LinkedHashMap::class.java)
-                rv.add(syntax as LinkedHashMap<String,*>)
+                rv.add(syntax as LinkedHashMap<String, *>)
             }
             return rv.toList()
 
@@ -77,9 +80,10 @@ class SyntaxRepository {
         }
     }
 
-    fun saveSyntax(id:String, syntaxs: Map<String,Map<String,Map<String, String>>>){
-        data class SyntaxStruct(var identifier: String, var syntax: Map<String,Map<String, String>>)
-        var syntaxToSave = SyntaxStruct(id,syntaxs[syntaxs.keys.first()]!!)
+    fun saveSyntax(id: String, syntaxs: Map<String, Map<String, Map<String, String>>>) {
+        data class SyntaxStruct(var identifier: String, var syntax: Map<String, Map<String, String>>)
+
+        var syntaxToSave = SyntaxStruct(id, syntaxs[syntaxs.keys.first()]!!)
         val json = ObjectMapper().writeValueAsString(syntaxToSave)
 
         var connection: Connection? = null
@@ -91,7 +95,7 @@ class SyntaxRepository {
             upsert.setString(1, id)
             upsert.setString(2, json)
             upsert.executeUpdate()
-            addSuntaxToRepo(id,syntaxs[syntaxs.keys.first()]!!)
+            addSuntaxToRepo(id, syntaxs[syntaxs.keys.first()]!!)
         } catch (e: Exception) {
             e.printStackTrace()
             throw RepositoryException()
@@ -99,10 +103,6 @@ class SyntaxRepository {
             if (connection != null) connection.close()
         }
     }
-
-
-    fun findOne(id: String): Syntax? = syntaxData[id]
-
 
     @Bean
     @Throws(SQLException::class)
@@ -119,5 +119,4 @@ class SyntaxRepository {
             }
         }
     }
-
 }

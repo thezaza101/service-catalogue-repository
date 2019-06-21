@@ -3,7 +3,6 @@ package au.gov.api.servicecatalogue.repository.definitions
 import au.gov.api.servicecatalogue.repository.RepositoryException
 import com.beust.klaxon.*
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,41 +17,42 @@ import java.sql.Connection
 import java.sql.SQLException
 import javax.sql.DataSource
 
-
 enum class Direction {
     FROM, TO, UNDIRECTED
 }
 
-data class Result(@JsonIgnore var meta: Meta, val direction: Direction, val to: String, var toName:String = "")
-data class Meta(val type:String, val directed:Boolean, val verbs : Map<Direction, String>)
-data class RelationDTO(val from:String, val type:String, val to:String, val direction: Direction)
+data class Result(@JsonIgnore var meta: Meta, val direction: Direction, val to: String, var toName: String = "")
 
+data class Meta(val type: String, val directed: Boolean, val verbs: Map<Direction, String>)
 
 @Service
 class RelationshipRepository {
 
     @Value("\${spring.datasource.url}")
-    private var dbUrl: String? = null
+    var dbUrl: String? = null
 
     @Autowired
-    private lateinit var dataSource: DataSource
+    lateinit var dataSource: DataSource
+
+    data class NewRelationship(var type: String, var dir: Direction, var content: Pair<String, String>)
+
+    class Relations {
+        var type: String = ""
+        var content: MutableList<String> = mutableListOf()
+
+        constructor (itype: String, icontent: MutableList<String>) {
+            type = itype
+            content = icontent
+        }
+    }
 
     private var relationships: MutableMap<String, MutableList<Result>> = mutableMapOf()
     private var metas: MutableMap<String, Meta> = mutableMapOf()
 
+    constructor() {}
 
-    constructor(){}
-
-    constructor(theDataSource:DataSource){
+    constructor(theDataSource: DataSource) {
         dataSource = theDataSource
-    }
-    private fun addResult(from:String, type:String, to:String, direction: Direction){
-        if(!metas.containsKey(type)) println("\n\n*****\nNo relationsihp meta for $type. Failing\n*****\n\n")
-        val meta = metas[type]!!
-        if(!relationships.containsKey(from)){
-            relationships[from] = mutableListOf()
-        }
-        relationships[from]!!.add(Result(meta, direction, to))
     }
 
     @EventListener(ApplicationReadyEvent::class)
@@ -62,7 +62,16 @@ class RelationshipRepository {
         addJsonLd()
     }
 
-    private fun addJsonLd(){
+    private fun addResult(from: String, type: String, to: String, direction: Direction) {
+        if (!metas.containsKey(type)) println("\n\n*****\nNo relationsihp meta for $type. Failing\n*****\n\n")
+        val meta = metas[type]!!
+        if (!relationships.containsKey(from)) {
+            relationships[from] = mutableListOf()
+        }
+        relationships[from]!!.add(Result(meta, direction, to))
+    }
+
+    private fun addJsonLd() {
         // for historical purposes
         /*for(jsonld in listOf("agift")){
             val json = JsonLd("/definitions/jsonld/$jsonld.json")
@@ -79,7 +88,7 @@ class RelationshipRepository {
                 val to = relationship.content[1]
                 addResult(from, type, to, Direction.TO)
                 addResult(to, type, from, Direction.FROM)
-            } catch (e:IndexOutOfBoundsException) {
+            } catch (e: IndexOutOfBoundsException) {
                 val from = ""
                 val to = ""
                 addResult(from, type, to, Direction.TO)
@@ -88,44 +97,13 @@ class RelationshipRepository {
         }
     }
 
-    class Relations {
-        var type:String = ""
-        var content:MutableList<String> = mutableListOf()
-        constructor (itype:String,icontent:MutableList<String>){
-            type = itype
-            content = icontent
-        }
-    }
-    private fun getRelationships() : MutableList<Relations> {
-        var connection: Connection? = null
-        try {
-            connection = dataSource.connection
-
-            val stmt = connection.createStatement()
-            val rs = stmt.executeQuery("SELECT * FROM definitions_relationships")
-            val rv: MutableList<Relations> = mutableListOf()
-            while (rs.next()) {
-                val relType = rs.getString("reltype")
-                val content = readJsonArrayToStringList(rs.getString("relationship"))
-                rv.add(Relations(relType,content))
-            }
-            return rv
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            throw RepositoryException()
-        } finally {
-            if (connection != null) connection.close()
-        }
-    }
-
-    private fun readJsonArrayToStringList(input:String) : MutableList<String> {
-        val raw = input.substring(1,input.length-1).trim()
-        var output:MutableList<String> = mutableListOf()
+    private fun readJsonArrayToStringList(input: String): MutableList<String> {
+        val raw = input.substring(1, input.length - 1).trim()
+        var output: MutableList<String> = mutableListOf()
         if (raw.length < 1) return output
         val rawArray = raw.split(',')
         for (s in rawArray) {
-            output.add(s.replace('"',' ').trim())
+            output.add(s.replace('"', ' ').trim())
         }
         return output
     }
@@ -146,7 +124,40 @@ class RelationshipRepository {
         }
     }
 
-    private fun getMetaJsonFromDB() : List<String> {
+    fun getRelationshipFor(identifier: String): MutableMap<String, MutableList<Result>> {
+        if (!relationships.containsKey(identifier)) return mutableMapOf()
+        val relations = relationships[identifier]
+
+        val results = mutableMapOf<String, MutableList<Result>>()
+
+        for (relation in relations!!) {
+            if (!results.containsKey(relation.meta.type)) results[relation.meta.type] = mutableListOf()
+            results[relation.meta.type]!!.add(relation)
+        }
+        return results
+    }
+
+    fun getMeta(type: String): Meta {
+        return metas[type]!!
+    }
+
+    fun getDBString(rel: NewRelationship): String {
+        var output = "[\"${rel.content.first}\",\"${rel.content.second}\"]"
+        return output
+    }
+
+    fun addRelationshipToMemoryDB(rel: NewRelationship) {
+        addResult(rel.content.first, rel.type, rel.content.second, Direction.TO)
+        addResult(rel.content.second, rel.type, rel.content.first, Direction.FROM)
+    }
+
+    fun addMetas(meta: Meta) {
+        metas[meta.type] = meta
+    }
+
+    // database access functions
+
+    private fun getMetaJsonFromDB(): List<String> {
         var connection: Connection? = null
         try {
             connection = dataSource.connection
@@ -167,27 +178,30 @@ class RelationshipRepository {
         }
     }
 
-    fun getRelationshipFor(identifier: String): MutableMap<String, MutableList<Result>>{
-        if(!relationships.containsKey(identifier)) return mutableMapOf()
-        val relations = relationships[identifier]
+    private fun getRelationships(): MutableList<Relations> {
+        var connection: Connection? = null
+        try {
+            connection = dataSource.connection
 
-        val results = mutableMapOf<String, MutableList<Result>>()
+            val stmt = connection.createStatement()
+            val rs = stmt.executeQuery("SELECT * FROM definitions_relationships")
+            val rv: MutableList<Relations> = mutableListOf()
+            while (rs.next()) {
+                val relType = rs.getString("reltype")
+                val content = readJsonArrayToStringList(rs.getString("relationship"))
+                rv.add(Relations(relType, content))
+            }
+            return rv
 
-        for(relation in relations!!){
-            if(!results.containsKey(relation.meta.type)) results[relation.meta.type] = mutableListOf()
-            results[relation.meta.type]!!.add(relation)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw RepositoryException()
+        } finally {
+            if (connection != null) connection.close()
         }
-        return results
     }
 
-    fun getMeta(type:String): Meta {
-        return metas[type]!!
-    }
-
-    data class NewRelationship(var type: String, var dir:Direction, var content: Pair<String,String>)
-
-    fun saveRelationship(relation:NewRelationship)
-    {
+    fun saveRelationship(relation: NewRelationship) {
         var connection: Connection? = null
         try {
             connection = dataSource.connection
@@ -209,20 +223,6 @@ class RelationshipRepository {
         addRelationshipToMemoryDB(relation)
     }
 
-    fun getDBString(rel:NewRelationship) : String {
-        var output = "[\"${rel.content.first}\",\"${rel.content.second}\"]"
-        return output
-    }
-
-    fun addRelationshipToMemoryDB (rel:NewRelationship) {
-        addResult(rel.content.first, rel.type, rel.content.second, Direction.TO)
-        addResult(rel.content.second, rel.type, rel.content.first, Direction.FROM)
-    }
-    fun addMetas (meta:Meta) {
-        metas[meta.type] = meta
-    }
-
-
     @Bean
     @Throws(SQLException::class)
     fun dataSource(): DataSource? {
@@ -238,5 +238,4 @@ class RelationshipRepository {
             }
         }
     }
-
 }

@@ -40,13 +40,13 @@ class QueryLogger {
         } catch (e: Exception) {
             log.error("Something went wrong saving the query to the database. " + e.message)
         } finally {
-            if(connection != null) connection.close()
+            if (connection != null) connection.close()
         }
 
     }
 
-    data class LoggedQuery(val query:String, val expanded: String, val results: Int, val time:String)
-    data class QueryLog(val count:Int, val queries:List<LoggedQuery>)
+    data class LoggedQuery(val query: String, val expanded: String, val results: Int, val time: String)
+    data class QueryLog(val count: Int, val queries: List<LoggedQuery>)
 
     @GetMapping("/api/queries")
     fun getQueries(): QueryLog {
@@ -60,20 +60,19 @@ class QueryLogger {
 
 
             while (rs.next()) {
-                output.add(LoggedQuery(rs.getString("query"), rs.getString("expanded"), rs.getInt("results"),rs.getString("time")))
+                output.add(LoggedQuery(rs.getString("query"), rs.getString("expanded"), rs.getInt("results"), rs.getString("time")))
             }
 
         } catch (e: Exception) {
             log.error("Something went wrong getting the queries from the database. " + e.message)
-        }
-        finally {
-            if(connection != null) connection.close()
+        } finally {
+            if (connection != null) connection.close()
         }
 
         return QueryLog(output.size, output.toList())
     }
 
-    fun numberOfQueries():Long{
+    fun numberOfQueries(): Long {
         var connection: Connection? = null
         var count = 0L
         try {
@@ -87,9 +86,8 @@ class QueryLogger {
 
         } catch (e: Exception) {
             log.error("Something went wrong getting the queries from the database. " + e.message)
-        }
-        finally {
-            if(connection != null) connection.close()
+        } finally {
+            if (connection != null) connection.close()
         }
 
         return count
@@ -106,7 +104,7 @@ class QueryLogger {
             config.jdbcUrl = dbUrl
             try {
                 return HikariDataSource(config)
-            }catch(e:Exception){
+            } catch (e: Exception) {
                 return null
             }
         }
