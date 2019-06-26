@@ -2,6 +2,7 @@ package au.gov.api.servicecatalogue.repository.definitions
 
 import au.gov.api.servicecatalogue.repository.QueryLogger
 import au.gov.api.servicecatalogue.repository.RepositoryException
+import com.beust.klaxon.Debug
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -168,7 +169,7 @@ class DefinitionRepository {
 
     private fun addJsonDefinitions() {
         var allDomains = getDomainsFromDb()
-
+        
         for (domain in allDomains) {
             if (domain.acronym != "dims") domains[domain.acronym] = domain
 
