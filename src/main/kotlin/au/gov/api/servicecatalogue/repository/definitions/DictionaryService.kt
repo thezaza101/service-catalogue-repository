@@ -4,6 +4,7 @@ import DoubleMetaphone
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import kotlin.math.absoluteValue
+import kotlin.math.pow
 
 @Service
 public class DictionaryService {
@@ -102,7 +103,7 @@ public class DictionaryService {
     }
 
     private fun getWeightedScore(dist: DistanceResult, max:Double): Double {
-            return (dist.distance * (1-(dist.distance/max)))
+            return (dist.distance * (1-(dist.distance/max.pow(2))))
     }
 
     fun getMetaphoneMatrix(input: String): List<List<String>> {
