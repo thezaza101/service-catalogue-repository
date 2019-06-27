@@ -1,7 +1,10 @@
 package au.gov.api.servicecatalogue.repository.definitions
 
+import DoubleMetaphone
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import kotlin.math.absoluteValue
+import kotlin.math.pow
 
 @Service
 public class DictionaryService {
@@ -33,13 +36,42 @@ public class DictionaryService {
     }
 
     fun runQuery(query: String, filterdDef: MutableList<Definition>): String {
-        var results: MutableList<DistanceResult> = mutableListOf()
-        filterdDef.forEach { results.add(DistanceResult(it.name, levenshtein(query, it.name))) }
-        results.sortBy { it.distance }
-        when (results.first().distance < query.length / 1.5) {
-            true -> return results.first().value
-            false -> return ""
+        var dms: MutableList<List<List<String>>> = mutableListOf()
+
+        //Get the approximate phonetic encoding(s) for the filtered definition list
+        filterdDef.forEach { dms.add(getMetaphoneMatrix(it.name)) }
+
+        //Get the approximate phonetic encoding(s) for the query
+        val queryDM = getMetaphoneMatrix(query)
+
+        //Compare all of the phonetic encodings and save the result
+        var scores: MutableList<Int> = mutableListOf()
+        dms.forEach { scores.add(compareMetaphoneMatrix(queryDM, it)) }
+
+        val phoneDefs : MutableList<DistanceResult> = mutableListOf()
+        var strResults: MutableList<DistanceResult> = mutableListOf()
+
+
+        filterdDef.forEach { strResults.add(DistanceResult(it.name, levenshtein(query, it.name).toDouble())) }
+
+        for (i in 0 until scores.count()){
+            phoneDefs.add(DistanceResult(filterdDef[i].name,scores[i].toDouble()))
         }
+
+        val strMax = strResults.maxBy { it.distance }
+        val phoneMax = phoneDefs.maxBy { it.distance }
+
+
+        var results: MutableList<DistanceResult> = mutableListOf()
+
+        for (i in 0 until scores.count()){
+            var newScore = getWeightedScore(phoneDefs[i],phoneMax!!.distance) +
+                    getWeightedScore(strResults[i],strMax!!.distance + (query.length - strResults[i].value.length).absoluteValue)
+            results.add(DistanceResult(phoneDefs[i].value,newScore))
+        }
+
+        results.sortBy { it.distance }
+        return results.first().value
     }
 
     private fun levenshtein(lhs: CharSequence, rhs: CharSequence): Int {
@@ -69,6 +101,80 @@ public class DictionaryService {
 
         return cost[lhsLength - 1]
     }
+
+    private fun getWeightedScore(dist: DistanceResult, max:Double): Double {
+            return (dist.distance * (1-(dist.distance/max.pow(2))))
+    }
+
+    fun getMetaphoneMatrix(input: String): List<List<String>> {
+        //tokenize the input
+        var splitInput = input.split(' ')
+        //splitInput = removeStopWords(splitInput)
+        var output: MutableList<List<String>> = mutableListOf()
+        splitInput.forEach { output.add(DoubleMetaphone.getDoubleMetaphone(it).toList()) }
+        return output.toList()
+    }
+
+
+    private fun compareMetaphoneMatrix(query: List<List<String>>, compareTo: List<List<String>>): Int {
+        //keep track of the score
+        var scores: MutableList<Int> = mutableListOf()
+
+        //for each word in the query
+        for (i in 0 until maxOf(query.count(), compareTo.count())) {
+            val queryDM = query.getOrNull(i) ?: listOf(" ", " ")
+            val compareDM = compareTo.getOrNull(i) ?: listOf(" ", " ")
+            var score = ComputeSingleDoubleMetaphoneScore(queryDM, compareDM)
+            scores.add(score)
+        }
+        //Aggregate the scores
+        var totalScore: Int = 0
+        scores.forEach { totalScore += it }
+
+        return totalScore
+    }
+
+    private fun ComputeSingleDoubleMetaphoneScore(query: List<String>, compareTo: List<String>): Int {
+        var primaryScore: Int = 0
+        var alternateScore: Int = 0
+
+        //Compute the primary score
+        var p = query.first()
+        if (p != compareTo.first() || p != compareTo.lastOrNull()) {
+            primaryScore = p.length - maxOf(lcs(p, compareTo.first()).count(), lcs(p, compareTo.lastOrNull()
+                    ?: "").count())
+        }
+
+        //Compute the alternate score
+        if (query.count() > 1) {
+            var a = query.last()
+            if (a != compareTo.first() || a != compareTo.lastOrNull()) {
+                alternateScore = a.length - maxOf(lcs(a, compareTo.first()).count(), lcs(a, compareTo.lastOrNull()
+                        ?: "").count())
+            }
+        } else {
+            alternateScore = primaryScore
+        }
+
+        return minOf(primaryScore, alternateScore)
+    }
+
+    //https://rosettacode.org/wiki/Longest_Common_Substring#Kotlin
+    private fun lcs(a: String, b: String): String {
+        if (a.length > b.length) return lcs(b, a)
+        var res = ""
+        for (ai in 0 until a.length) {
+            for (len in a.length - ai downTo 1) {
+                for (bi in 0 until b.length - len) {
+                    if (a.regionMatches(ai, b, bi, len) && len > res.length) {
+                        res = a.substring(ai, ai + len)
+                    }
+                }
+            }
+        }
+        return res
+    }
+
 }
 
-data class DistanceResult(var value: String, var distance: Int)
+data class DistanceResult(var value: String, var distance: Double)
