@@ -168,7 +168,6 @@ class DefinitionsController {
 
 
     //Post requests
-
     @ResponseStatus(HttpStatus.FORBIDDEN)
     class Unauthorised() : RuntimeException()
 

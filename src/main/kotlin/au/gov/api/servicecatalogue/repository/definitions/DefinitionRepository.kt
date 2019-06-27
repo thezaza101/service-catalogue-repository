@@ -169,7 +169,7 @@ class DefinitionRepository {
 
     private fun addJsonDefinitions() {
         var allDomains = getDomainsFromDb()
-        
+
         for (domain in allDomains) {
             if (domain.acronym != "dims") domains[domain.acronym] = domain
 

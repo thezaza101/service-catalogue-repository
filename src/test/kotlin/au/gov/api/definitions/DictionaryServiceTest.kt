@@ -16,7 +16,7 @@ class DictionaryServiceTest{
         Assert.assertEquals("Address",service.runQuery("Badress",getTestDefList()))
         Assert.assertEquals("Surname",service.runQuery("Firname",getTestDefList()))
         Assert.assertEquals("Superannuation Fund Details Annual Salary For Contributions Amount",service.runQuery("Superannuation Fund Details Annual Salary For Amount",getTestDefList()))
-        Assert.assertEquals("Assets Loans And Receivables Lease Financing Gross Total Amount",service.runQuery("Assets And Receivables Lease Financing Total Amount Gross",getTestDefList()))
+        Assert.assertEquals("Tax file number",service.runQuery("Tx fl Nmr",getTestDefList()))
         Assert.assertEquals("Higher Education Provider code",service.runQuery("Higher Education code",getTestDefList()))
     }
 
@@ -28,7 +28,7 @@ class DictionaryServiceTest{
         output.add(Definition("Address","Core Entity","","","","",arrayOf<String>(),"",arrayOf<String>(),mapOf(),""))
         output.add(Definition("Surname","Financial Insolvency","","","","",arrayOf<String>(),"",arrayOf<String>(),mapOf(),""))
         output.add(Definition("Superannuation Fund Details Annual Salary For Contributions Amount","Super Stream","","","","",arrayOf<String>(),"",arrayOf<String>(),mapOf(),""))
-        output.add(Definition("Assets Loans And Receivables Lease Financing Gross Total Amount","Financial Statistics","","","","",arrayOf<String>(),"",arrayOf<String>(),mapOf(),""))
+        output.add(Definition("Tax file number","Financial Statistics","","","","",arrayOf<String>(),"",arrayOf<String>(),mapOf(),""))
         output.add(Definition("Higher Education Provider code","Education","","","","",arrayOf<String>(),"",arrayOf<String>(),mapOf(),""))
 
         return output

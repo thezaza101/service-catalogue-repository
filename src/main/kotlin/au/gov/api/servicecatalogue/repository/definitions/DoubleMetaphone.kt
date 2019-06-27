@@ -1,3 +1,6 @@
+
+import org.springframework.security.crypto.keygen.KeyGenerators.string
+
 /*
 
 This is Kotlin port of Anthony Tong Lee's 2008 implementation of the double metaphone algorithm
@@ -32,8 +35,8 @@ class DoubleMetaphone {
     companion object {
 
         @JvmStatic
-        fun getDoubleMetaphone(input: String): String {
-            if (input.length < 1) return input
+        fun getDoubleMetaphone(input: String): MetaphoneData {
+            //if (input.length < 1) return null
             var metaphoneData = MetaphoneData()
 
             var current: Int = 0
@@ -837,7 +840,7 @@ class DoubleMetaphone {
                 }
             }
 
-            return metaphoneData.toString()
+            return metaphoneData
         }
 
         fun Char.isVowel(): Boolean {
@@ -893,13 +896,25 @@ class DoubleMetaphone {
         }
 
         override fun toString(): String {
-            var ret = if (Alternative) _secondary.toString() else _primary.toString()
+            val primary = _primary.toString()
+            val secondary = _secondary.toString()
 
-            //only give back 4 char metaph
-            if (ret.length > 4) {
-                ret = ret.substring(0, 4)
+            return if (primary !== secondary) {
+                "[\"" + _primary.toString() + "\",\"" + _secondary.toString() + "\"]"
+            } else {
+                "[\"" + _primary.toString() + "\"]"
             }
-            return ret
+        }
+
+        fun toList():List<String> {
+            val primary = _primary.toString()
+            val secondary = _secondary.toString()
+
+            return if (primary != secondary) {
+                listOf(_primary.toString(),_secondary.toString())
+            } else {
+                listOf(_primary.toString())
+            }
         }
     }
 }
