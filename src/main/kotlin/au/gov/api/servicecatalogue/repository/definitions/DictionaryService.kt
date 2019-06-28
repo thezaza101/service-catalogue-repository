@@ -53,7 +53,7 @@ public class DictionaryService {
         var strResults: MutableList<DistanceResult> = mutableListOf()
 
 
-        filterdDef.forEach { strResults.add(DistanceResult(it.name, damerauLevenshtein(query, it.name).toDouble())) }
+        filterdDef.forEach { strResults.add(DistanceResult(it.name, damerauLevenshtein(removeDoubleLetters(query), removeDoubleLetters(it.name)).toDouble())) }
 
         for (i in 0 until scores.count()){
             phoneDefs.add(DistanceResult(filterdDef[i].name,scores[i].toDouble()))
@@ -74,7 +74,7 @@ public class DictionaryService {
         results.sortBy { it.distance }
         return results.first().value
     }
-
+    fun removeDoubleLetters(input: String) : String = input.replace(Regex("(.)\\1+"), "$1")
     private fun levenshtein(lhs: CharSequence, rhs: CharSequence): Int {
         val lhsLength = lhs.length
         val rhsLength = rhs.length
