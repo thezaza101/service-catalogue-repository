@@ -12,6 +12,7 @@ public class DictionaryService {
     @Autowired
     private lateinit var repository: DefinitionRepository
 
+
     fun getDictionaryCorrection(query: String, domains: Array<String>): String {
         try {
             if (query.length > 3) {
@@ -52,7 +53,7 @@ public class DictionaryService {
         var strResults: MutableList<DistanceResult> = mutableListOf()
 
 
-        filterdDef.forEach { strResults.add(DistanceResult(it.name, levenshtein(query, it.name).toDouble())) }
+        filterdDef.forEach { strResults.add(DistanceResult(it.name, damerauLevenshtein(query, it.name).toDouble())) }
 
         for (i in 0 until scores.count()){
             phoneDefs.add(DistanceResult(filterdDef[i].name,scores[i].toDouble()))
@@ -100,6 +101,50 @@ public class DictionaryService {
         }
 
         return cost[lhsLength - 1]
+    }
+
+    private fun damerauLevenshtein(a: CharSequence, b: CharSequence): Int {
+        val cost = Array(a.length + 1, { IntArray(b.length + 1) })
+        for (iA in 0..a.length) {
+            cost[iA][0] = iA
+        }
+        for (iB in 0..b.length) {
+            cost[0][iB] = iB
+        }
+        val mapCharAToIndex = hashMapOf<Char, Int>()
+
+        for (iA in 1..a.length) {
+            var prevMatchingBIndex = 0
+            for (iB in 1..b.length) {
+                val doesPreviousMatch = (a[iA - 1] == b[iB - 1])
+
+                val possibleCosts = mutableListOf<Int>()
+                if (doesPreviousMatch) {
+                    // Perfect match cost.
+                    possibleCosts.add(cost[iA - 1][iB - 1])
+                } else {
+                    // Substitution cost.
+                    possibleCosts.add(cost[iA - 1][iB - 1] + 1)
+                }
+                // Insertion cost.
+                possibleCosts.add(cost[iA][iB - 1] + 1)
+                // Deletion cost.
+                possibleCosts.add(cost[iA - 1][iB] + 1)
+
+                // Transposition cost.
+                val bCharIndexInA = mapCharAToIndex.getOrDefault(b[iB - 1], 0)
+                if (bCharIndexInA != 0 && prevMatchingBIndex != 0) {
+                    possibleCosts.add(cost[bCharIndexInA - 1][prevMatchingBIndex - 1]
+                            + (iA - bCharIndexInA - 1) + 1 + (iB - prevMatchingBIndex - 1))
+                }
+
+                cost[iA][iB] = possibleCosts.min()!!
+
+                if (doesPreviousMatch) prevMatchingBIndex = iB
+            }
+            mapCharAToIndex[a[iA - 1]] = iA
+        }
+        return cost[a.length][b.length]
     }
 
     private fun getWeightedScore(dist: DistanceResult, max:Double): Double {
