@@ -1,4 +1,4 @@
-package au.gov.api.servicecatalogue.repository
+package au.gov.api.repository
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import org.apache.http.client.utils.URLEncodedUtils

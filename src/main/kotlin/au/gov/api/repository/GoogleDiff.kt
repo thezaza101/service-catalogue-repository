@@ -18,7 +18,7 @@
  * Modifications: Functions and classes related to Patch and Match have been removed
  */
 
-package au.gov.api.servicecatalogue.Diff
+package au.gov.api.repository.Diff
 
 import com.sun.org.apache.xpath.internal.operations.Bool
 import java.io.UnsupportedEncodingException

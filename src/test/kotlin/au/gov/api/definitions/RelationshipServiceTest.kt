@@ -1,18 +1,18 @@
 package au.gov.api.definitions
 
 import au.gov.api.MockDataSource
-import au.gov.api.servicecatalogue.repository.definitions.Direction
-import au.gov.api.servicecatalogue.repository.definitions.Meta
-import au.gov.api.servicecatalogue.repository.definitions.RelationshipRepository
-import au.gov.api.servicecatalogue.repository.definitions.Result
+import au.gov.api.repository.definitions.Direction
+import au.gov.api.repository.definitions.Meta
+import au.gov.api.repository.definitions.RelationshipRepository
+import au.gov.api.repository.definitions.Result
 import org.junit.Assert
 import org.junit.Test
 
 class RelationshipServiceTest {
     private var service = RelationshipRepository(MockDataSource())
     constructor(){
-        service.addMetas(Meta("skos:member",true,mapOf(Direction.TO to "is member of", Direction.FROM to  "has member")))
-        service.addMetas(Meta("rdfs:seeAlso", false,mapOf(Direction.UNDIRECTED to "see also")))
+        service.addMetas(Meta("skos:member", true, mapOf(Direction.TO to "is member of", Direction.FROM to "has member")))
+        service.addMetas(Meta("rdfs:seeAlso", false, mapOf(Direction.UNDIRECTED to "see also")))
 
         service.saveRelationship(RelationshipRepository.NewRelationship("rdfs:seeAlso", Direction.UNDIRECTED, Pair("Blah","something")))
         service.saveRelationship(RelationshipRepository.NewRelationship("rdfs:seeAlso", Direction.FROM, Pair("Blah","something")))

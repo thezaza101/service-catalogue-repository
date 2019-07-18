@@ -1,6 +1,6 @@
 package au.gov.api
 
-import au.gov.api.servicecatalogue.repository.PageResult
+import au.gov.api.repository.PageResult
 import org.junit.Assert
 import org.junit.Test
 

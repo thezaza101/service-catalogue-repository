@@ -1,5 +1,5 @@
 
-package au.gov.api.servicecatalogue.repository
+package au.gov.api.repository
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.env.Environment
@@ -17,10 +17,10 @@ import com.beust.klaxon.Parser
 import com.beust.klaxon.JsonObject
 
 import au.gov.api.config.*
-import au.gov.api.servicecatalogue.Diff.HTMLDiffOutputGenerator
-import au.gov.api.servicecatalogue.Diff.MyersDiff
-import au.gov.api.servicecatalogue.Diff.TextDiff
-import au.gov.api.servicecatalogue.repository.definitions.*
+import au.gov.api.repository.Diff.HTMLDiffOutputGenerator
+import au.gov.api.repository.Diff.MyersDiff
+import au.gov.api.repository.Diff.TextDiff
+
 data class Event(var key:String = "", var action:String = "", var type:String = "", var name:String = "", var reason:String = "", var content:String = "")
 @RestController
 class APIController {
@@ -35,11 +35,10 @@ class APIController {
     private lateinit var environment: Environment
 
     @Autowired
-    private lateinit var ghapi:GitHub
+    private lateinit var ghapi: GitHub
 
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    class UnauthorisedToModifyServices() : RuntimeException()
-    class UnauthorisedToViewServices() : RuntimeException()
+    class Unauthorised : RuntimeException()
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
     class NoContentFound(override val message: String?) : java.lang.Exception()
@@ -79,7 +78,7 @@ class APIController {
             if (raw==null) throw RuntimeException()
             val user = String(Base64.getDecoder().decode(raw.removePrefix("Basic "))).split(":")[0]
             val parser:Parser = Parser()
-            var eventPayload:JsonObject = parser.parse(StringBuilder(Klaxon().toJsonString(Event(user,action,type,name,reason,content)))) as JsonObject
+            var eventPayload:JsonObject = parser.parse(StringBuilder(Klaxon().toJsonString(Event(user, action, type, name, reason, content)))) as JsonObject
             val eventAuth = System.getenv("LogAuthKey")
             val eventAuthUser = eventAuth.split(":")[0]
             val eventAuthPass = eventAuth.split(":")[1]
@@ -138,12 +137,12 @@ class APIController {
             return service
         }
 
-        throw UnauthorisedToModifyServices()
+        throw Unauthorised()
     }
 
 
     data class IndexDTO(val content:List<IndexServiceDTO>)
-    data class IndexServiceDTO(val id:String, val name:String, val description:String, val tags:List<String>, val logoURI:String, val metadata:Metadata)
+    data class IndexServiceDTO(val id:String, val name:String, val description:String, val tags:List<String>, val logoURI:String, val metadata: Metadata)
     @CrossOrigin
     @GetMapping("/index")
     fun index(request:HttpServletRequest): IndexDTO {
@@ -204,12 +203,12 @@ turn this off for now to prevent !visibility data leaking out
         {
             if (flush)
             {
-                ghapi.clearCacheForRepo(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc))
+                ghapi.clearCacheForRepo(GitHub.getUserGitHubUri(ingestSrc), GitHub.getRepoGitHubUri(ingestSrc))
             }
-            var fullList = ghapi.getGitHubConvos(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc),showall)
-            return PageResult(ghapi.getGitHubConvosHATEOS(fullList,sort,size,page),URLHelper().getURL(request),fullList.count())
+            var fullList = ghapi.getGitHubConvos(GitHub.getUserGitHubUri(ingestSrc), GitHub.getRepoGitHubUri(ingestSrc),showall)
+            return PageResult(ghapi.getGitHubConvosHATEOS(fullList, sort, size, page), URLHelper().getURL(request), fullList.count())
         }else{
-            throw APIController.NoContentFound("This service is not connected to github")
+            throw NoContentFound("This service is not connected to github")
         }
     }
 
@@ -230,12 +229,12 @@ turn this off for now to prevent !visibility data leaking out
         {
             if (flush)
             {
-                ghapi.clearCacheForRepo(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc))
+                ghapi.clearCacheForRepo(GitHub.getUserGitHubUri(ingestSrc), GitHub.getRepoGitHubUri(ingestSrc))
             }
-            var fullList = ghapi.getComments(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc),convoType,convoId)
-            return PageResult(ghapi.getGitHubCommentsHATEOS(fullList,size,page),URLHelper().getURL(request),fullList.count())
+            var fullList = ghapi.getComments(GitHub.getUserGitHubUri(ingestSrc), GitHub.getRepoGitHubUri(ingestSrc),convoType,convoId)
+            return PageResult(ghapi.getGitHubCommentsHATEOS(fullList, size, page), URLHelper().getURL(request), fullList.count())
         }else{
-            throw APIController.NoContentFound("This service is not connected to github")
+            throw NoContentFound("This service is not connected to github")
         }
     }
 
@@ -251,14 +250,14 @@ turn this off for now to prevent !visibility data leaking out
         val ingestSrc = service.metadata.ingestSource
         if (ingestSrc.contains("github",true))
         {
-            var convoCount = ghapi.getConvoCount(GitHub.getUserGitHubUri(ingestSrc),GitHub.getRepoGitHubUri(ingestSrc),countClosed,countPRComments)
+            var convoCount = ghapi.getConvoCount(GitHub.getUserGitHubUri(ingestSrc), GitHub.getRepoGitHubUri(ingestSrc),countClosed,countPRComments)
             var serviceMetadata = service.metadata
             serviceMetadata.NumberOfConversations = convoCount
             service.metadata = serviceMetadata
             repository.save(service)
             return convoCount
         }else{
-            throw APIController.NoContentFound("This service is not connected to github")
+            throw NoContentFound("This service is not connected to github")
         }
     }
 
@@ -270,7 +269,43 @@ turn this off for now to prevent !visibility data leaking out
             val service = repository.findById(id,auth)
             return service.currentContent()
         } catch (e:Exception){
-            throw UnauthorisedToViewServices()
+            throw Unauthorised()
+        }
+    }
+
+
+    data class IngestedServiceDescription(val id: String = "",val name: String = "", val description: String = "", val pages: List<String> = listOf(""),
+                                          var tags: MutableList<String> = mutableListOf(), var logo: String = "", var agency: String = "",
+                                          var ingestSrc: String = "", var space: String = "", var visibility: Boolean = false)
+    @CrossOrigin
+    @PostMapping("/service")
+    fun setService(request:HttpServletRequest, @RequestBody sd: IngestedServiceDescription) : String? {
+        if(isAuthorisedToSaveService(request, "ingestor")) {
+            var sdExists = false
+            var existinSD = ServiceDescription()
+            var sdToSave = ServiceDescription()
+            try {
+                existinSD = repository.findById(sd.id)
+                sdExists = true
+            } catch (e:Exception) {}
+
+            if (sdExists) {
+                existinSD.revise(sd.name,sd.description,sd.pages,false)
+                existinSD.tags = sd.tags
+                existinSD.logo = sd.logo
+                sdToSave = existinSD
+            } else {
+                var newSD = ServiceDescription(sd.name, sd.description, sd.pages, sd.tags, sd.logo)
+                var newMD = Metadata(sd.agency, sd.space, sd.visibility, sd.ingestSrc)
+                newSD.metadata = newMD
+                sdToSave = newSD
+            }
+
+            repository.save(sdToSave)
+            return repository.findAll(false)
+                    .filter { it.revisions.last().content.name == sdToSave.revisions.last().content.name }.first().id
+        } else {
+            return "Unauthorised"
         }
     }
 
@@ -284,11 +319,11 @@ turn this off for now to prevent !visibility data leaking out
             val service = repository.findById(id,auth)
             var outputList = mutableListOf<ServiceDescriptionRevisionMetadata>()
             service.revisions.forEachIndexed { index, element ->
-                outputList.add(ServiceDescriptionRevisionMetadata(element.id,element.time))
+                outputList.add(ServiceDescriptionRevisionMetadata(element.id, element.time))
             }
             return outputList
         } catch (e:Exception){
-            throw UnauthorisedToViewServices()
+            throw Unauthorised()
         }
     }
 
@@ -319,7 +354,7 @@ turn this off for now to prevent !visibility data leaking out
             val diffObj = TextDiff(MyersDiff(lines), HTMLDiffOutputGenerator("span","style",lines))
             return diffObj.generateDiffOutput(originalPage,newPage)
         } catch (e:Exception){
-            throw UnauthorisedToViewServices()
+            throw Unauthorised()
         }
     }
 
@@ -328,7 +363,7 @@ turn this off for now to prevent !visibility data leaking out
 
     @CrossOrigin
     @PostMapping("/metadata/{id}")
-    fun setMetadata(@RequestBody metadata: Metadata, @PathVariable id:String, @RequestParam(required = false, defaultValue = "") logo: String,  request:HttpServletRequest): Metadata{
+    fun setMetadata(@RequestBody metadata: Metadata, @PathVariable id:String, @RequestParam(required = false, defaultValue = "") logo: String, request:HttpServletRequest): Metadata {
 
         val auth = isAuthorisedToSaveService(request, "admin")
         val service = repository.findById(id,auth)
@@ -345,28 +380,9 @@ turn this off for now to prevent !visibility data leaking out
             return service.metadata
         }
 
-        throw UnauthorisedToModifyServices()
+        throw Unauthorised()
     }
 
-    @ResponseStatus(HttpStatus.CREATED)  // 201
-    @CrossOrigin
-    @PostMapping("/service")
-    fun setService(@RequestBody revision: ServiceDescriptionContent, request:HttpServletRequest): ServiceDescription {
-
-        val service = ServiceDescription(revision.name, revision.description, revision.pages, listOf(), "")
-        
-        if(isAuthorisedToSaveService(request, service.metadata.space)) {
-            repository.save(service)
-            try {
-                logEvent(request,"Created","Service",service.id!!,revision.name)
-            }
-            catch (e:Exception)
-            { println(e.message)}
-            return service
-        }
-
-        throw UnauthorisedToModifyServices()
-    }
 
     @CrossOrigin
     @ResponseStatus(HttpStatus.OK)  // 200
@@ -389,7 +405,7 @@ turn this off for now to prevent !visibility data leaking out
             return service.currentContent()
         }
 
-        throw UnauthorisedToModifyServices()
+        throw Unauthorised()
     }
 
 
@@ -410,6 +426,6 @@ turn this off for now to prevent !visibility data leaking out
             return
         }
 
-        throw UnauthorisedToModifyServices()
+        throw Unauthorised()
     }
 }

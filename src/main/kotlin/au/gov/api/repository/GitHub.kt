@@ -1,5 +1,6 @@
-package au.gov.api.servicecatalogue.repository
+package au.gov.api.repository
 
+import com.beust.klaxon.JsonArray
 import com.beust.klaxon.JsonObject
 import java.net.URL
 import com.beust.klaxon.Parser
@@ -15,7 +16,7 @@ class GitHub{
     data class Comment(var username:String, var userImageURI:String, var created_at:String, var body:String)
 
     @Autowired
-    private lateinit var rh:WebRequestHandler
+    private lateinit var rh: WebRequestHandler
 
     private val gitHubApiBaseUri = "https://api.github.com"
 
@@ -88,7 +89,7 @@ class GitHub{
 
         var output = mutableListOf<Conversation>()
         for (issue in issuesList) {
-            var v = Conversation(issue["number"] as Int,issue["title"] as String,"issues",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,issue["comments"] as Int? ,issue["updated_at"] as String, issue["state"] as String, issue["body"] as String,getConvoTags(issue["labels"] as com.beust.klaxon.JsonArray<*>),parseSection(issue["body"] as String))
+            var v = Conversation(issue["number"] as Int, issue["title"] as String, "issues", (issue["user"] as JsonObject)["login"] as String, (issue["user"] as JsonObject)["avatar_url"] as String, issue["comments"] as Int?, issue["updated_at"] as String, issue["state"] as String, issue["body"] as String, getConvoTags(issue["labels"] as JsonArray<*>), parseSection(issue["body"] as String))
             output.add(v)
         }
         return output.toList()
@@ -104,7 +105,7 @@ class GitHub{
 
         var output = mutableListOf<Conversation>()
         for (issue in pullReqList) {
-            var v = Conversation(issue["number"] as Int,issue["title"] as String,"pulls",(issue["user"] as JsonObject)["login"] as String,(issue["user"] as JsonObject)["avatar_url"] as String,-1 ,issue["updated_at"] as String,issue["state"] as String, issue["body"] as String,getConvoTags(issue["labels"] as com.beust.klaxon.JsonArray<*>),parseSection(issue["body"] as String))
+            var v = Conversation(issue["number"] as Int, issue["title"] as String, "pulls", (issue["user"] as JsonObject)["login"] as String, (issue["user"] as JsonObject)["avatar_url"] as String, -1, issue["updated_at"] as String, issue["state"] as String, issue["body"] as String, getConvoTags(issue["labels"] as JsonArray<*>), parseSection(issue["body"] as String))
             output.add(v)
         }
         return output.toList()
@@ -228,7 +229,7 @@ class GitHub{
 
         @JvmStatic
         fun getTextOfFlie(uri:String):String{
-            return URL(getRawURI(uri)).readText() 
+            return URL(getRawURI(uri)).readText()
         }
 
         @JvmStatic

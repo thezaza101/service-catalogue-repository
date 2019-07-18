@@ -1,4 +1,4 @@
-package au.gov.api.servicecatalogue.repository.definitions
+package au.gov.api.repository.definitions
 
 import DoubleMetaphone
 import org.springframework.beans.factory.annotation.Autowired
@@ -56,7 +56,7 @@ public class DictionaryService {
         filterdDef.forEach { strResults.add(DistanceResult(it.name, damerauLevenshtein(removeDoubleLetters(query), removeDoubleLetters(it.name)).toDouble())) }
 
         for (i in 0 until scores.count()){
-            phoneDefs.add(DistanceResult(filterdDef[i].name,scores[i].toDouble()))
+            phoneDefs.add(DistanceResult(filterdDef[i].name, scores[i].toDouble()))
         }
 
         val strMax = strResults.maxBy { it.distance }
@@ -68,7 +68,7 @@ public class DictionaryService {
         for (i in 0 until scores.count()){
             var newScore = getWeightedScore(phoneDefs[i],phoneMax!!.distance) +
                     getWeightedScore(strResults[i],strMax!!.distance + (query.length - strResults[i].value.length).absoluteValue)
-            results.add(DistanceResult(phoneDefs[i].value,newScore))
+            results.add(DistanceResult(phoneDefs[i].value, newScore))
         }
 
         results.sortBy { it.distance }

@@ -1,6 +1,6 @@
-package au.gov.api.servicecatalogue.repository.definitions
+package au.gov.api.repository.definitions
 
-import au.gov.api.servicecatalogue.repository.RepositoryException
+import au.gov.api.repository.RepositoryException
 import com.beust.klaxon.*
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.zaxxer.hikari.HikariConfig

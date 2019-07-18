@@ -1,7 +1,7 @@
-package au.gov.api.servicecatalogue.repository.definitions
+package au.gov.api.repository.definitions
 
 import au.gov.api.config.Config
-import au.gov.api.servicecatalogue.repository.Event
+import au.gov.api.repository.Event
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Klaxon
 import com.beust.klaxon.Parser

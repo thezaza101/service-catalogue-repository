@@ -3,15 +3,15 @@ package au.gov.api
 import org.junit.Assert
 import org.junit.Test
 
-import au.gov.api.servicecatalogue.repository.GitHub
-import au.gov.api.servicecatalogue.repository.ServiceDescriptionRepositoryImpl
-import au.gov.api.servicecatalogue.repository.WebRequestHandler
+import au.gov.api.repository.GitHub
+import au.gov.api.repository.ServiceDescriptionRepositoryImpl
+import au.gov.api.repository.WebRequestHandler
 import org.springframework.beans.factory.annotation.Autowired
 
 class GitHubTest{
 
     var repository = ServiceDescriptionRepositoryImpl(MockDataSource())
-    var ghapi:GitHub = GitHub(WebRequestHandler(repository))
+    var ghapi: GitHub = GitHub(WebRequestHandler(repository))
 
 
     @Test
@@ -90,7 +90,7 @@ My first repository on GitHub.
     fun can_get_convo_on_github_uri() {
         iniTestDB()
         val uri = "https://github.com/apigovau/api-gov-au-definitions/blob/master/README.md"
-        val convos = ghapi.getGitHubConvos(GitHub.getUserGitHubUri(uri),GitHub.getRepoGitHubUri(uri))
+        val convos = ghapi.getGitHubConvos(GitHub.getUserGitHubUri(uri), GitHub.getRepoGitHubUri(uri))
         Assert.assertEquals(4,convos.count())
     }
 

@@ -1,4 +1,4 @@
-package au.gov.api.servicecatalogue.repository
+package au.gov.api.repository
 
 import kotlin.collections.Iterable
 import org.springframework.stereotype.Service

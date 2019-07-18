@@ -31,7 +31,7 @@ test {
 }
 
 jar {
-    baseName = 'service-catalogue-repository'
+    baseName = 'repository'
     version = '1.0'
 }
 

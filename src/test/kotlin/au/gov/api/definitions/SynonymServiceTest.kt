@@ -1,7 +1,7 @@
 package au.gov.api.definitions
 
 import au.gov.api.MockDataSource
-import au.gov.api.servicecatalogue.repository.definitions.SynonymRepository
+import au.gov.api.repository.definitions.SynonymRepository
 import org.junit.Assert
 import org.junit.Test
 

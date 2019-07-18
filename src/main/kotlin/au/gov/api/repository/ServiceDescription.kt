@@ -1,4 +1,4 @@
-package au.gov.api.servicecatalogue.repository
+package au.gov.api.repository
 
 import com.sun.org.apache.xpath.internal.operations.Bool
 import org.springframework.data.annotation.Id

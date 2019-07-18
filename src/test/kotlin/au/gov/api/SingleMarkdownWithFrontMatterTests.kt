@@ -3,7 +3,7 @@ package au.gov.api
 import org.junit.Assert
 import org.junit.Test
 
-import au.gov.api.servicecatalogue.repository.SingleMarkdownWithFrontMatter
+import au.gov.api.repository.SingleMarkdownWithFrontMatter
 
 class SingleMarkdownWithFrontMatterTest{
 

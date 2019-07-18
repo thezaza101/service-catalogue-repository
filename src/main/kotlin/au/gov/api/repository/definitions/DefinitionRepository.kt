@@ -1,7 +1,7 @@
-package au.gov.api.servicecatalogue.repository.definitions
+package au.gov.api.repository.definitions
 
-import au.gov.api.servicecatalogue.repository.QueryLogger
-import au.gov.api.servicecatalogue.repository.RepositoryException
+import au.gov.api.repository.QueryLogger
+import au.gov.api.repository.RepositoryException
 import com.beust.klaxon.Debug
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser

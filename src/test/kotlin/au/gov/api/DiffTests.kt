@@ -1,7 +1,7 @@
 package au.gov.api
 
 
-import au.gov.api.servicecatalogue.Diff.*
+import au.gov.api.repository.Diff.*
 import org.junit.Assert
 import org.junit.Test
 

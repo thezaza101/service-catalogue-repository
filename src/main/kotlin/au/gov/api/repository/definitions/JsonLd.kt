@@ -1,4 +1,4 @@
-package au.gov.api.servicecatalogue.repository.definitions
+package au.gov.api.repository.definitions
 
 /*
 // for historical purposes

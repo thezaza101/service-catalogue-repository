@@ -1,7 +1,7 @@
 package au.gov.api
 
-import au.gov.api.servicecatalogue.repository.ServiceDescriptionRepositoryImpl
-import au.gov.api.servicecatalogue.repository.WebRequestHandler
+import au.gov.api.repository.ServiceDescriptionRepositoryImpl
+import au.gov.api.repository.WebRequestHandler
 import org.junit.Assert
 import org.junit.Test
 import java.lang.Exception

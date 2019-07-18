@@ -1,4 +1,4 @@
-package au.gov.api.servicecatalogue.repository
+package au.gov.api.repository
 
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile

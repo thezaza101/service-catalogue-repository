@@ -1,6 +1,6 @@
 package au.gov.api.definitions
 
-import au.gov.api.servicecatalogue.repository.definitions.LuceneQueryParser
+import au.gov.api.repository.definitions.LuceneQueryParser
 import org.junit.Assert
 import org.junit.Test
 

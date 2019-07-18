@@ -1,6 +1,6 @@
 
-import au.gov.api.servicecatalogue.repository.definitions.Definition
-import au.gov.api.servicecatalogue.repository.definitions.DictionaryService
+import au.gov.api.repository.definitions.Definition
+import au.gov.api.repository.definitions.DictionaryService
 import org.junit.Assert
 import org.junit.Test
 
@@ -8,7 +8,7 @@ import org.junit.Test
 
 class DictionaryServiceTest{
 
-    val service:DictionaryService = DictionaryService()
+    val service: DictionaryService = DictionaryService()
 
     @Test
     fun Test_Dict_correction(){
@@ -24,12 +24,12 @@ class DictionaryServiceTest{
     {
         val output:MutableList<Definition> = mutableListOf()
 
-        output.add(Definition("Electronic Contact Facsimile Area Code","Taxation and revenue collection","","","","",arrayOf<String>(),"",arrayOf<String>(),mapOf(),""))
-        output.add(Definition("Address","Core Entity","","","","",arrayOf<String>(),"",arrayOf<String>(),mapOf(),""))
-        output.add(Definition("Surname","Financial Insolvency","","","","",arrayOf<String>(),"",arrayOf<String>(),mapOf(),""))
-        output.add(Definition("Superannuation Fund Details Annual Salary For Contributions Amount","Super Stream","","","","",arrayOf<String>(),"",arrayOf<String>(),mapOf(),""))
-        output.add(Definition("Tax file number","Financial Statistics","","","","",arrayOf<String>(),"",arrayOf<String>(),mapOf(),""))
-        output.add(Definition("Higher Education Provider code","Education","","","","",arrayOf<String>(),"",arrayOf<String>(),mapOf(),""))
+        output.add(Definition("Electronic Contact Facsimile Area Code", "Taxation and revenue collection", "", "", "", "", arrayOf<String>(), "", arrayOf<String>(), mapOf(), ""))
+        output.add(Definition("Address", "Core Entity", "", "", "", "", arrayOf<String>(), "", arrayOf<String>(), mapOf(), ""))
+        output.add(Definition("Surname", "Financial Insolvency", "", "", "", "", arrayOf<String>(), "", arrayOf<String>(), mapOf(), ""))
+        output.add(Definition("Superannuation Fund Details Annual Salary For Contributions Amount", "Super Stream", "", "", "", "", arrayOf<String>(), "", arrayOf<String>(), mapOf(), ""))
+        output.add(Definition("Tax file number", "Financial Statistics", "", "", "", "", arrayOf<String>(), "", arrayOf<String>(), mapOf(), ""))
+        output.add(Definition("Higher Education Provider code", "Education", "", "", "", "", arrayOf<String>(), "", arrayOf<String>(), mapOf(), ""))
 
         return output
     }

@@ -1,4 +1,4 @@
-package au.gov.api.servicecatalogue.repository
+package au.gov.api.repository
 
 
 import java.util.*
@@ -16,7 +16,7 @@ class WebRequestHandler {
     @Autowired
     private lateinit var repository: ServiceDescriptionRepositoryImpl
 
-    data class ResponseContentChacheEntry(var request_uri: String = "-1", var last_updated: Date = WebRequestHandler.getCurrentDateTime(), var content: String = "")
+    data class ResponseContentChacheEntry(var request_uri: String = "-1", var last_updated: Date = getCurrentDateTime(), var content: String = "")
 
     var cache: HashMap<String, ResponseContentChacheEntry> = HashMap<String, ResponseContentChacheEntry>()
 
@@ -65,7 +65,7 @@ class WebRequestHandler {
     }
 
     private fun getContentFromWeb(uri: String): ResponseContentChacheEntry {
-        val response = WebRequestHandler.get(uri)
+        val response = Companion.get(uri)
         if (response.statusCode.toString()[0] != '2') {
             throw WebException(response.statusCode.toString() + " " + response.text)
         }

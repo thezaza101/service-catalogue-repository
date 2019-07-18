@@ -1,6 +1,6 @@
-package au.gov.api.servicecatalogue.repository.definitions
+package au.gov.api.repository.definitions
 
-import au.gov.api.servicecatalogue.repository.RepositoryException
+import au.gov.api.repository.RepositoryException
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.springframework.beans.factory.annotation.Autowired

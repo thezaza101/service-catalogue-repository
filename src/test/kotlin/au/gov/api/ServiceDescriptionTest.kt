@@ -1,8 +1,8 @@
 package au.gov.api
 
 
-import au.gov.api.servicecatalogue.repository.ServiceDescriptionRepositoryImpl
-import au.gov.api.servicecatalogue.repository.ServiceDescription
+import au.gov.api.repository.ServiceDescriptionRepositoryImpl
+import au.gov.api.repository.ServiceDescription
 import org.junit.Assert
 import org.junit.Test
 
