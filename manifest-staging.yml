@@ -1,6 +1,6 @@
 ---
 applications:
-- name: repository
+- name: staging-repository
   memory: 1G
   buildpack: java_buildpack
   env:
