@@ -14,10 +14,10 @@ class RelationshipServiceTest {
         service.addMetas(Meta("skos:member", true, mapOf(Direction.TO to "is member of", Direction.FROM to "has member")))
         service.addMetas(Meta("rdfs:seeAlso", false, mapOf(Direction.UNDIRECTED to "see also")))
 
-        service.saveRelationship(RelationshipRepository.NewRelationship("rdfs:seeAlso", Direction.UNDIRECTED, Pair("Blah","something")))
-        service.saveRelationship(RelationshipRepository.NewRelationship("rdfs:seeAlso", Direction.FROM, Pair("Blah","something")))
-        service.saveRelationship(RelationshipRepository.NewRelationship("rdfs:seeAlso", Direction.FROM, Pair("Blah","something")))
-        service.saveRelationship(RelationshipRepository.NewRelationship("skos:member", Direction.TO, Pair("Blah","something")))
+        service.saveRelationship(RelationshipRepository.NewRelationship("rdfs:seeAlso", Direction.UNDIRECTED, arrayOf("Blah","something")))
+        service.saveRelationship(RelationshipRepository.NewRelationship("rdfs:seeAlso", Direction.FROM, arrayOf("Blah","something")))
+        service.saveRelationship(RelationshipRepository.NewRelationship("rdfs:seeAlso", Direction.FROM, arrayOf("Blah","something")))
+        service.saveRelationship(RelationshipRepository.NewRelationship("skos:member", Direction.TO, arrayOf("Blah","something")))
     }
     @Test
     fun test_can_get_relationships() {
