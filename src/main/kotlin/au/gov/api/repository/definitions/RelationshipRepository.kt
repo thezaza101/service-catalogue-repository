@@ -34,7 +34,7 @@ class RelationshipRepository {
     @Autowired
     lateinit var dataSource: DataSource
 
-    data class NewRelationship(var type: String, var dir: Direction, var content: Pair<String, String>)
+    data class NewRelationship(var type: String = "", var dir: Direction = Direction.UNDIRECTED, var content: Array<String> = arrayOf())
 
     class Relations {
         var type: String = ""
@@ -142,13 +142,13 @@ class RelationshipRepository {
     }
 
     fun getDBString(rel: NewRelationship): String {
-        var output = "[\"${rel.content.first}\",\"${rel.content.second}\"]"
+        var output = "[\"${rel.content.first()}\",\"${rel.content.last()}\"]"
         return output
     }
 
     fun addRelationshipToMemoryDB(rel: NewRelationship) {
-        addResult(rel.content.first, rel.type, rel.content.second, Direction.TO)
-        addResult(rel.content.second, rel.type, rel.content.first, Direction.FROM)
+        addResult(rel.content.first(), rel.type, rel.content.last(), Direction.TO)
+        addResult(rel.content.last(), rel.type, rel.content.first(), Direction.FROM)
     }
 
     fun addMetas(meta: Meta) {

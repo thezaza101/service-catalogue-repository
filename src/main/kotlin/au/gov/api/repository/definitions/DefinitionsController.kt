@@ -229,17 +229,18 @@ class DefinitionsController {
     @CrossOrigin
     @PostMapping("/definitions/relationships")
     fun postRelationship(request: HttpServletRequest, @RequestBody relationship: RelationshipRepository.NewRelationship) {
-        if (isAuthorisedToSaveDefinition(request, getSpaceFromId(relationship.content.first)).and(isAuthorisedToSaveDefinition(request, getSpaceFromId(relationship.content.second)))) {
-            if ((relationship.type == "").or(relationship.content.first == "").or(relationship.content.second == "")) throw Exception("Required values are empty")
+        if (isAuthorisedToSaveDefinition(request, getSpaceFromId(relationship.content.first())).and(isAuthorisedToSaveDefinition(request, getSpaceFromId(relationship.content.last())))) {
+            if (relationship.content.count() != 2) throw Exception("Content must cointain 2 ids")
+            if ((relationship.type == "").or(relationship.content.first() == "").or(relationship.content.last() == "")) throw Exception("Required values are empty")
             try {
-                val first = definitionRepository.getDefinitionById(relationship.content.first)
-                val second = definitionRepository.getDefinitionById(relationship.content.second)
+                val first = definitionRepository.getDefinitionById(relationship.content.first())
+                val second = definitionRepository.getDefinitionById(relationship.content.last())
             } catch (e: Exception) {
                 throw Exception("Identifier does not exist", e)
             }
 
             relationRepository.saveRelationship(relationship)
-            logEvent(request, "Created", "Relationship", relationship.content.first, relationship.content.second)
+            logEvent(request, "Created", "Relationship", relationship.content.first(), relationship.content.last())
         } else {
             throw Unauthorised()
         }
