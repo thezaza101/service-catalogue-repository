@@ -181,6 +181,7 @@ class SynonymRepository {
             connection = dataSource.connection
 
             val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS synonyms (synonym JSONB)")
             val rs = stmt.executeQuery("SELECT synonym FROM synonyms")
             val rv: MutableList<List<String>> = mutableListOf()
             while (rs.next()) {
@@ -223,6 +224,8 @@ class SynonymRepository {
             connection = dataSource.connection
             val dbEntry = getDBString(input)
 
+            val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS synonyms (synonym JSONB)")
             val q = connection.prepareStatement("DELETE FROM synonyms WHERE synonym::text = ?")
             q.setString(1, dbEntry)
             q.executeUpdate()

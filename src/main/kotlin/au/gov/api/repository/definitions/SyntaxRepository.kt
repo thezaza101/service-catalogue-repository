@@ -62,6 +62,7 @@ class SyntaxRepository {
             connection = dataSource.connection
 
             val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS syntaxes (syntax JSONB)")
             val rs = stmt.executeQuery("SELECT syntax FROM syntaxes")
             val rv: MutableList<LinkedHashMap<String, *>> = mutableListOf()
             val om = ObjectMapper()
