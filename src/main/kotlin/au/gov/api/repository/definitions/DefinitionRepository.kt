@@ -311,6 +311,8 @@ class DefinitionRepository {
         var connection: Connection? = null
         try {
             connection = dataSource.connection
+            val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS definitions (acronym VARCHAR(5), defdomain VARCHAR(100), version VARCHAR(100),sourceURL VARCHAR(2000),ident VARCHAR(200),definition JSON)")
             val q = connection.prepareStatement("SELECT definition, sourceurl FROM definitions WHERE acronym = '$domain'")
             var rs = q.executeQuery()
             val rv: MutableList<DBDef> = mutableListOf()
@@ -411,7 +413,9 @@ class DefinitionRepository {
         var connection: Connection? = null
         try {
             connection = dataSource.connection
-            val stmt = connection.createStatement()
+            var stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS definitions (acronym VARCHAR(5), defdomain VARCHAR(100), version VARCHAR(100),sourceURL VARCHAR(2000),ident VARCHAR(200),definition JSON)")
+            stmt = connection.createStatement()
             val rs = stmt.executeQuery("SELECT DISTINCT acronym, defdomain, version FROM definitions")
             val rv: MutableList<Domain> = mutableListOf()
             while (rs.next()) {
@@ -434,6 +438,8 @@ class DefinitionRepository {
         try {
             connection = dataSource.connection
 
+            val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS definitions (acronym VARCHAR(5), defdomain VARCHAR(100), version VARCHAR(100),sourceURL VARCHAR(2000),ident VARCHAR(200),definition JSON)")
             val q = connection.prepareStatement("DELETE FROM definitions WHERE ident = ?")
             q.setString(1, ident)
             q.executeUpdate()
