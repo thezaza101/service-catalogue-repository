@@ -250,10 +250,21 @@ class DefinitionsController {
     private fun getSpaceFromId(id: String): String {
         return "#" + id.replace("http://api.gov.au/definition/", "").split("/").first()
     }
+    private fun getIdPrefix(exampleId:String):String {
+        var idWithPrefix = exampleId.split('/').last()
+        var output = if (idWithPrefix[0].isLetter()) idWithPrefix.substring(0,idWithPrefix.indexOfFirst{it.isDigit()}) else ""
+        return output
+    }
 
     private fun getIdForNewDefinition(domain:String):String {
         var d = domain.replace("#","")
-        var newID = "http://api.gov.au/definition/$d/$d${definitionRepository.getAllDefinitionsInDomain(d).count() + 1}"
+        var domainDefs = definitionRepository.getAllDefinitionsInDomain(d)
+        var prefix = "de"
+        try {
+            prefix = getIdPrefix(domainDefs[Random().nextInt(domainDefs.count())].identifier)
+        } catch (e:Exception){}
+
+        var newID = "http://api.gov.au/definition/$d/$prefix${domainDefs.count() + 1}"
         return newID
     }
 
@@ -262,9 +273,8 @@ class DefinitionsController {
     fun postDefinition(request: HttpServletRequest, @RequestParam id: String, @RequestBody definition: NewDefinition, @RequestParam(required = false, defaultValue = "true") domainExists: Boolean):String {
         if (isAuthorisedToSaveDefinition(request, getSpaceFromId(id))) {
             var exists: Definition? = null
-            //if (id != definition.identifier) throw Exception("Supplied identifiers must match, if you wish to change the identifier contact sbr_tdt@sbr.gov.au")
             try {
-                exists = definitionRepository.findOne(id)
+                exists = definitionRepository.findOne("http://api.gov.au/definition/$id")
                 if (exists != null) {
                     if ((exists.domain != definition.domain).or(exists.domainAcronym != definition.domainAcronym)) throw Exception("Cannot change the domain of an existing definition, if you wish to change the domain contact sbr_tdt@sbr.gov.au")
                 }
@@ -309,7 +319,6 @@ class DefinitionsController {
             } else {
                 throw Exception("Please check your domain name spelling.  if this is intentional contact sbr_tdt@sbr.gov.au")
             }
-
         } else {
             throw Exception("Domain does not exist")
         }
