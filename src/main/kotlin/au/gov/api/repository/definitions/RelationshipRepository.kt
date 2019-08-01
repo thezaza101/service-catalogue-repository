@@ -28,8 +28,6 @@ data class Meta(val type: String, val directed: Boolean, val verbs: Map<Directio
 @Service
 class RelationshipRepository {
 
-    @Value("\${spring.datasource.url}")
-    var dbUrl: String? = null
 
     @Autowired
     lateinit var dataSource: DataSource
@@ -225,19 +223,4 @@ class RelationshipRepository {
         addRelationshipToMemoryDB(relation)
     }
 
-    @Bean
-    @Throws(SQLException::class)
-    fun dataSource(): DataSource? {
-        if (dbUrl?.isEmpty() ?: true) {
-            return HikariDataSource()
-        } else {
-            val config = HikariConfig()
-            config.jdbcUrl = dbUrl
-            try {
-                return HikariDataSource(config)
-            } catch (e: Exception) {
-                return null
-            }
-        }
-    }
 }
