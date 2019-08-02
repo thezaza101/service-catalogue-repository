@@ -22,7 +22,7 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
 
     @Autowired
     lateinit var dataSource: DataSource
-
+/*
     @EventListener(ApplicationReadyEvent::class)
     @Scheduled(fixedRate = 3600000)
     fun ingestFromGithub() {
@@ -43,7 +43,7 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
         }
 
     }
-
+*/
     constructor() {}
 
     constructor(theDataSource: DataSource) {
