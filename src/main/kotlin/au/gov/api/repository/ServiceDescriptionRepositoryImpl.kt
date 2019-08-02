@@ -58,6 +58,8 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
         try {
             connection = dataSource.connection
 
+            val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS service_descriptions (id VARCHAR(50), data JSONB, PRIMARY KEY (id))")
             val q = connection.prepareStatement("select data from service_descriptions where data->'metadata'->>'ingestSource' = ?")
             q.setString(1, uri)
             var rs = q.executeQuery()
@@ -143,6 +145,8 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
         try {
             connection = dataSource.connection
 
+            val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS service_descriptions (id VARCHAR(50), data JSONB, PRIMARY KEY (id))")
             val q = connection.prepareStatement("SELECT data FROM service_descriptions WHERE id = ?")
             q.setString(1, id)
             var rs = q.executeQuery()
@@ -168,6 +172,8 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
         try {
             connection = dataSource.connection
 
+            val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS service_descriptions (id VARCHAR(50), data JSONB, PRIMARY KEY (id))")
             val q = connection.prepareStatement("DELETE FROM service_descriptions WHERE id = ?")
             q.setString(1, id)
             q.executeUpdate()
@@ -226,6 +232,7 @@ class ServiceDescriptionRepositoryImpl : ServiceDescriptionRepository {
             connection = dataSource.connection
 
             val stmt = connection.createStatement()
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS service_descriptions (id VARCHAR(50), data JSONB, PRIMARY KEY (id))")
             val rs = stmt.executeQuery("SELECT data FROM service_descriptions")
             val rv: MutableList<ServiceDescription> = mutableListOf()
             val om = ObjectMapper()
