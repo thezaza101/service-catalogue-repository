@@ -269,12 +269,13 @@ class DefinitionsController {
     }
 
     @CrossOrigin
-    @PostMapping("/definitions/definition")
-    fun postDefinition(request: HttpServletRequest, @RequestParam id: String, @RequestBody definition: NewDefinition, @RequestParam(required = false, defaultValue = "true") domainExists: Boolean):String {
-        if (isAuthorisedToSaveDefinition(request, getSpaceFromId(id))) {
+    @PostMapping("/definitions/definition/{domainAcronym}/{id}")
+    fun postKnownIDDefinition(request: HttpServletRequest, @PathVariable id: String, @PathVariable domainAcronym:String, @RequestBody definition: NewDefinition):String{
+        if (isAuthorisedToSaveDefinition(request, domainAcronym)) {
+
             var exists: Definition? = null
             try {
-                exists = definitionRepository.findOne("http://api.gov.au/definition/$id")
+                exists = definitionRepository.findOne("http://api.gov.au/definition/$domainAcronym/$id")
                 if (exists != null) {
                     if ((exists.domain != definition.domain).or(exists.domainAcronym != definition.domainAcronym)) throw Exception("Cannot change the domain of an existing definition, if you wish to change the domain contact sbr_tdt@sbr.gov.au")
                 }
@@ -282,46 +283,44 @@ class DefinitionsController {
             }
             if (exists == null) {
                 //New definition
-                if (domainExists) {
-                    var newDef = definition
-                    if (newDef.identifier!!.trim().isNotBlank()) throw Exception("New definitions cannot contain an identifier")
-                    newDef.identifier = getIdForNewDefinition(getSpaceFromId(id))
-
                     addDefinitionToExistingDomain(definition)
                     logEvent(request, "Created", "Definition", id, "new", ObjectMapper().writeValueAsString(definition))
-                    return newDef.identifier
-                } else {
-                    throw Exception("Cannot create new domain, contact sbr_tdt@sbr.gov.au")
-
-                }
+                    return id
             } else {
                 if (Definition(definition) == exists) throw Exception("Definition already exists")
                 //Existing definition
-                if (domainExists) {
                     definitionRepository.removeDefinitions(exists.identifier)
                     addDefinitionToExistingDomain(definition)
                     logEvent(request, "Updated", "Definition", id, "new", ObjectMapper().writeValueAsString(exists))
                     return exists.identifier
-                } else {
-                    throw Exception("Cannot create new domain, contact sbr_tdt@sbr.gov.au")
-                }
             }
+
+        } else {
+            throw Unauthorised()
+        }
+
+
+    }
+
+
+    @CrossOrigin
+    @PostMapping("/definitions/definition")
+    fun postDefinition(request: HttpServletRequest, @RequestBody definition: NewDefinition ):String {
+        if (isAuthorisedToSaveDefinition(request, definition.domainAcronym)) {
+                    var newDef = definition
+                    if (newDef.identifier!!.trim().isNotBlank()) throw Exception("New definitions cannot contain an identifier")
+                    newDef.identifier = getIdForNewDefinition(definition.domainAcronym)
+
+                    addDefinitionToExistingDomain(definition)
+                    logEvent(request, "Created", "Definition", definition.identifier.split(".").last(), "new", ObjectMapper().writeValueAsString(definition))
+                    return newDef.identifier
         } else {
             throw Unauthorised()
         }
     }
 
     private fun addDefinitionToExistingDomain(definition: NewDefinition) {
-        if (definitionRepository.domainExists(definition.domainAcronym)) {
-            val domain = definitionRepository.getDomainByAcronym(definition.domainAcronym)
-            if ((domain != null).and(domain!!.name == definition.domain)) {
-                definitionRepository.saveDefinition(definition)
-            } else {
-                throw Exception("Please check your domain name spelling.  if this is intentional contact sbr_tdt@sbr.gov.au")
-            }
-        } else {
-            throw Exception("Domain does not exist")
-        }
+        definitionRepository.saveDefinition(definition)
     }
 
     private fun addDomainToMemory(definition: NewDefinition) {
