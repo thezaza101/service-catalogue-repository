@@ -20,6 +20,7 @@ import au.gov.api.config.*
 import au.gov.api.repository.Diff.HTMLDiffOutputGenerator
 import au.gov.api.repository.Diff.MyersDiff
 import au.gov.api.repository.Diff.TextDiff
+import org.springframework.http.ResponseEntity
 
 data class Event(var key:String = "", var action:String = "", var type:String = "", var name:String = "", var reason:String = "", var content:String = "")
 @RestController
@@ -279,8 +280,9 @@ turn this off for now to prevent !visibility data leaking out
                                           var ingestSrc: String = "", var space: String = "", var visibility: Boolean = false)
     @CrossOrigin
     @PostMapping("/service")
-    fun setService(request:HttpServletRequest, @RequestBody sd: IngestedServiceDescription) : String? {
+    fun setService(request:HttpServletRequest, @RequestBody sd: IngestedServiceDescription) : ResponseEntity<String?> {
         if(isAuthorisedToSaveService(request, "ingestor")) {
+            //TODO: this creates a new id for existing service (for blank or incorrect ID)
             var sdExists = false
             var existinSD = ServiceDescription()
             var sdToSave = ServiceDescription()
@@ -302,10 +304,11 @@ turn this off for now to prevent !visibility data leaking out
             }
 
             repository.save(sdToSave)
-            return repository.findAll(false)
-                    .filter { it.revisions.last().content.name == sdToSave.revisions.last().content.name }.first().id
+            var idz = repository.findAll(false)
+                    .filter { it.revisions.last().content.name == sdToSave.revisions.last().content.name }.first().id.toString()
+            return ResponseEntity(idz,HttpStatus.CREATED)
         } else {
-            return "Unauthorised"
+            return ResponseEntity(HttpStatus.UNAUTHORIZED)
         }
     }
 
@@ -414,9 +417,7 @@ turn this off for now to prevent !visibility data leaking out
     @DeleteMapping("/service/{id}")
     fun deleteService(@PathVariable id:String, request:HttpServletRequest) {
         val service = repository.findById(id, true)
-
         if(isAuthorisedToSaveService(request, service.metadata.space)) {
-
             repository.delete(id)
             try {
                 logEvent(request,"Deleted","Service",service.id!!,"Deleted")

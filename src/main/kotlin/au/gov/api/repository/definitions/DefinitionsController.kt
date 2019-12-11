@@ -289,7 +289,7 @@ class DefinitionsController {
             } else {
                 if (Definition(definition) == exists) throw Exception("Definition already exists")
                 //Existing definition
-                    definitionRepository.removeDefinitions(exists.identifier)
+                    definitionRepository.removeDefinitions  (exists.identifier)
                     addDefinitionToExistingDomain(definition)
                     logEvent(request, "Updated", "Definition", id, "new", ObjectMapper().writeValueAsString(exists))
                     return exists.identifier
