@@ -295,6 +295,7 @@ turn this off for now to prevent !visibility data leaking out
                 existinSD.revise(sd.name,sd.description,sd.pages,false)
                 existinSD.tags = sd.tags
                 existinSD.logo = sd.logo
+                existinSD.metadata = Metadata(sd.agency, sd.space, sd.visibility, sd.ingestSrc)
                 sdToSave = existinSD
             } else {
                 var newSD = ServiceDescription(sd.name, sd.description, sd.pages, sd.tags, sd.logo)
