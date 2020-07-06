@@ -49,5 +49,5 @@ jobs:
           name: Deploying to cloud.gov.au
           command: bash ./deploy.sh
           environment:
-            APPNAME: api-gov-au-repository
+            APPNAME: repository
 

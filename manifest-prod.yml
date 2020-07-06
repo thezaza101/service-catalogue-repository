@@ -1,13 +1,13 @@
 ---
 applications:
-- name: api-gov-au-repository
+- name: repository
   memory: 1G
   buildpack: java_buildpack
   env:
     SPRING_PROFILES_ACTIVE: prod
     config_environment: api.gov.au
     JAVA_OPTS: -Duser.timezone=Australia/Canberra
-  path: build/libs/service-catalogue-repository-1.0.jar
+  path: build/libs/repository-1.0.jar
   services:
   - api-gov-au-repository-pg-shared
   routes:

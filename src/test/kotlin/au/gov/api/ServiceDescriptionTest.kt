@@ -1,8 +1,8 @@
 package au.gov.api
 
 
-import au.gov.api.servicecatalogue.repository.ServiceDescriptionRepositoryImpl
-import au.gov.api.servicecatalogue.repository.ServiceDescription
+import au.gov.api.repository.ServiceDescriptionRepositoryImpl
+import au.gov.api.repository.ServiceDescription
 import org.junit.Assert
 import org.junit.Test
 
@@ -150,12 +150,35 @@ class ServiceDescriptionTest{
         Assert.assertEquals(listOf("Page 1", "Page 2", "Page 50"), svc2.currentContent().pages)
     }
 
-	  @Test
-	  fun testMockDataSource(){
-		var rep = ServiceDescriptionRepositoryImpl(MockDataSource())
-        val service = ServiceDescription("NewServiceName", "NewServiceDescription", listOf("# Page1"), listOf(), "")
-		rep.save(service)
-		Assert.assertEquals(1, rep.count())
-	  }
+    @Test
+    fun testMockDataSource(){
+    var rep = ServiceDescriptionRepositoryImpl(MockDataSource())
+    val service = ServiceDescription("NewServiceName", "NewServiceDescription", listOf("# Page1"), listOf(), "")
+    rep.save(service)
+    Assert.assertEquals(1, rep.count())
+    }
+
+    @Test
+    fun repositoryCanCompareEquality() {
+        val name = "ServiceName"
+        val description = "ServiceDescription"
+        val pages = listOf("Page 1","Page 2")
+
+        val svc = ServiceDescription(name, description, pages, listOf(), "")
+
+        Assert.assertEquals(1, svc.revisions.count())
+
+        val name1 = "ServiceName"
+        val description1 = "ServiceDescription"
+        val pages1 = listOf("Page 1","Page 2")
+        svc.revise(name1,description1,pages1,false)
+        Assert.assertEquals(1, svc.revisions.count())
+
+        val name2 = "ServiceName1"
+        val description2 = "ServiceDescription1"
+        val pages2 = listOf("Page 1","Page 2")
+        svc.revise(name2,description2,pages2,true)
+        Assert.assertEquals(2, svc.revisions.count())
+    }
 
 }
